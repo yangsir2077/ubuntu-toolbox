@@ -17,7 +17,22 @@ let _mainWindow = null;
 function setMainWindow(win) { _mainWindow = win; }
 function getMainWindow() { return _mainWindow; }
 
-const PROJECT_ROOT = path.resolve(__dirname, '../../..');
+// 获取项目根目录（与 flask-server.js 保持一致）
+function getProjectRoot() {
+  if (process.env.ELECTRON_FLASK_ROOT) return process.env.ELECTRON_FLASK_ROOT;
+  if (process.env.APPDIR) {
+    if (fs.existsSync(path.join(process.env.APPDIR, 'app.py'))) return process.env.APPDIR;
+    return path.join(process.env.APPDIR, 'resources', 'app');
+  }
+  if (process.resourcesPath) {
+    const appRoot = path.dirname(process.resourcesPath);
+    if (fs.existsSync(path.join(appRoot, 'app.py'))) return appRoot;
+    const altRoot = path.join(process.resourcesPath, 'app');
+    if (fs.existsSync(path.join(altRoot, 'app.py'))) return altRoot;
+  }
+  return path.resolve(__dirname, '../../..');
+}
+const PROJECT_ROOT = getProjectRoot();
 const SCRIPTS_DIR = path.join(PROJECT_ROOT, 'scripts');
 
 // 获取系统版本
@@ -42,6 +57,7 @@ function getSystemVersion() {
 
 // 读取脚本内容
 function readScriptFile(scriptId, version) {
+  console.log("[ScriptExecutor] PROJECT_ROOT=" + PROJECT_ROOT + " SCRIPTS_DIR=" + SCRIPTS_DIR + " scriptId=" + scriptId);
   const scriptDir = path.join(SCRIPTS_DIR, scriptId);
   let scriptPath = path.join(scriptDir, 'script.sh');
 

@@ -15,13 +15,23 @@ let flaskPort = 38457;
 // 优先使用环境变量 ELECTRON_FLASK_ROOT 指定
 // 打包后（asar: false）文件在 resources/app/ 下
 function getProjectRoot() {
+  // 1. 环境变量优先
   if (process.env.ELECTRON_FLASK_ROOT) return process.env.ELECTRON_FLASK_ROOT;
-  // 打包后（extraResources 放在 AppImage 根目录）
-  if (process.resourcesPath) {
-    const appRoot = path.dirname(process.resourcesPath); // AppImage 根目录
-    if (require('fs').existsSync(path.join(appRoot, 'app.py'))) return appRoot;
-    return path.join(process.resourcesPath, 'app');
+  // 2. AppImage 自带的环境变量
+  if (process.env.APPDIR) {
+    if (require('fs').existsSync(path.join(process.env.APPDIR, 'app.py'))) return process.env.APPDIR;
+    return path.join(process.env.APPDIR, 'resources', 'app');
   }
+  // 3. electron-builder 打包（linux-unpacked 根目录）
+  if (process.resourcesPath) {
+    // resourcesPath 的父目录 = AppImage/linux-unpacked 根目录
+    const appRoot = path.dirname(process.resourcesPath);
+    if (require('fs').existsSync(path.join(appRoot, 'app.py'))) return appRoot;
+    // 回退：尝试 resources/app/
+    const altRoot = path.join(process.resourcesPath, 'app');
+    if (require('fs').existsSync(path.join(altRoot, 'app.py'))) return altRoot;
+  }
+  // 4. 开发模式
   return path.resolve(__dirname, '../../..');
 }
 const PROJECT_ROOT = getProjectRoot();
