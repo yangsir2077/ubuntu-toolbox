@@ -452,6 +452,17 @@ def index():
     return render_template("index.html", module_registry=MODULE_REGISTRY)
 
 
+# ---------- Electron 渲染层脚本（桌面版注入） ----------
+@app.route('/electron/electron.js')
+def serve_electron_js():
+    """Electron 桌面版专用渲染层脚本"""
+    electron_dir = os.path.join(APP_DIR, 'electron', 'src', 'renderer')
+    electron_js = os.path.join(electron_dir, 'electron.js')
+    if os.path.exists(electron_js):
+        return send_file(electron_js, mimetype='application/javascript')
+    return "// Electron renderer not found", 404
+
+
 # ---------- 获取脚本（支持版本） ----------
 @app.route('/api/script/<script_id>')
 def get_script(script_id):

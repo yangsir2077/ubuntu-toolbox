@@ -1,0 +1,74 @@
+# electron-builder 多平台打包配置
+# Ubuntu 工具箱桌面版
+
+appId: com.ubuntu-toolbox.desktop
+productName: Ubuntu 工具箱
+copyright: Copyright © 2026 yangsir
+
+# 通用文件
+files:
+  - src/main/**/*
+  - src/preload/**/*
+  - src/renderer/**/*
+  # 包含原始 Flask 项目（作为数据文件）
+  - ../app.py
+  - ../scripts/**/*
+  - ../templates/**/*
+  - ../static/**/*
+  - ../requirements.txt
+
+# 打包时排除
+externals:
+  - node-pty
+  - ssh2
+
+# nsis 自定义配置
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: assets/icon.ico
+  uninstallerIcon: assets/icon.ico
+  installerHeaderIcon: assets/icon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Ubuntu 工具箱
+
+# dmg 配置 (macOS)
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+# AppImage 配置
+appImage:
+  license: ../LICENSE
+
+# Linux 配置
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Utility
+  icon: assets/icon.png
+
+# macOS 配置
+mac:
+  target:
+    - dmg
+  category: public.app-category.utilities
+  icon: assets/icon.icns
+
+# Windows 配置
+win:
+  target:
+    - nsis
+  icon: assets/icon.ico
+
+# ASAR 打包（性能优化）
+asar: true
+compression: maximum

@@ -1,0 +1,26 @@
+{
+  "name": "ubuntu-toolbox-desktop",
+  "version": "1.0.0",
+  "description": "Ubuntu 工具箱桌面版 - 跨平台桌面应用",
+  "main": "src/main/index.js",
+  "scripts": {
+    "dev": "electron .",
+    "build:linux": "electron-builder --linux",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:all": "electron-builder -mwl",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "author": "yangsir",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "electron-store": "^10.0.0",
+    "node-pty": "^1.0.0",
+    "ssh2": "^1.16.0",
+    "uuid": "^11.0.0"
+  }
+}
