@@ -142,6 +142,32 @@ npx electron-builder -mwl
 3. 在 `../templates/index.html` 中添加卡片 HTML
 4. 无需修改 Electron 代码——Flask 页面改动会自动反映到桌面应用中
 
+## 自动更新
+
+配置 `ELECTRON_UPDATE_URL` 环境变量指向包含 `latest.json` 的目录：
+
+```bash
+ELECTRON_UPDATE_URL=https://your-server.com/updates/ npm run dev
+```
+
+`latest.json` 格式：
+```json
+{
+  "version": "1.1.0",
+  "date": "2026-04-20",
+  "notes": "更新说明",
+  "files": [{ "url": "Ubuntu Toolbox-1.1.0.AppImage", "sha512": "..." }]
+}
+```
+
+本地测试可用 Python 临时服务：
+
+```bash
+cd electron/updates && python3 -m http.server 8899
+# 然后另一个终端
+ELECTRON_UPDATE_URL=http://localhost:8899/ npm run dev
+```
+
 ## License
 
 MIT

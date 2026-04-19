@@ -22,6 +22,8 @@
   let currentVersion = '';
   let scriptOutputCallback = null;
   let removeOutputListener = null;
+  // SSH 服务器 ID -> connectionId 映射
+  let connectedServerMap = {};
 
   // 初始化：获取系统版本，注入到页面
   async function init() {
@@ -119,7 +121,7 @@
           display: flex;
           flex-direction: column;
           z-index: 99999;
-          font-family: 'Fira Code', 'Courier New', monospace;
+          font-family: 'Fira Code', 'Courier New', 'Microsoft YaHei', 'PingFang SC', 'WenQuanYi Micro Hei', monospace;
           overflow: hidden;
         }
         .et-header {
@@ -154,6 +156,10 @@
         .et-body .line-error { color: #f48771; }
         .et-body .line-exit { color: #888; border-top: 1px dashed #444; margin-top: 8px; padding-top: 8px; }
         .et-body .line-stdout { color: #d4d4d4; }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
       `;
       document.head.appendChild(style);
     }
@@ -259,6 +265,80 @@
 
       // 插入按钮
       viewBtn.parentNode.insertBefore(runBtn, viewBtn.nextSibling);
+
+      // 创建「远程运行」按钮
+      const remoteRunBtn = document.createElement('button');
+      remoteRunBtn.className = 'btn et-run-btn et-remote-btn';
+      remoteRunBtn.style.cssText = 'background:#1565c0;color:white;border:none;border-radius:8px;padding:0.6rem 1rem;font-size:0.88rem;cursor:pointer;margin-left:8px;';
+      remoteRunBtn.innerHTML = '🌐 远程运行';
+      remoteRunBtn.title = '通过 SSH 在远程服务器上运行此脚本';
+
+      remoteRunBtn.onclick = async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        // 获取版本
+        const verSel = card.querySelector('.version-select');
+        const version = verSel ? verSel.value : '';
+
+        // 获取可用 SSH 服务器
+        let servers;
+        try {
+          servers = await window.ELECTRON_BRIDGE.sshGetServers();
+        } catch {
+          servers = [];
+        }
+
+        if (!servers || servers.length === 0) {
+          alert('请先在「⚙️ 设置」中添加 SSH 服务器');
+          return;
+        }
+
+        // 选择目标服务器
+        let targetServer = null;
+        if (servers.length === 1) {
+          targetServer = servers[0];
+        } else {
+          const names = servers.map((s, i) => `  ${i + 1}. ${s.name || s.host} (${s.username}@${s.host})`);
+          const selected = prompt('选择 SSH 服务器（输入序号）：\n' + names.join('\n'));
+          const idx = parseInt(selected) - 1;
+          if (isNaN(idx) || idx < 0 || idx >= servers.length) return;
+          targetServer = servers[idx];
+        }
+        if (!targetServer) return;
+
+        createTerminalPanel(moduleId + '-remote');
+
+        // 获取或建立连接
+        let connId = connectedServerMap[targetServer.id];
+        if (!connId) {
+          try {
+            const result = await window.ELECTRON_BRIDGE.sshConnect(targetServer);
+            connId = result.connectionId;
+            connectedServerMap[targetServer.id] = connId;
+          } catch (err) {
+            const body = document.getElementById(`terminal-moduleId + "-remote"-body`);
+            if (body) body.innerHTML += `<span class="line-error">SSH 连接失败: ${err.message}</span>`;
+            return;
+          }
+        }
+
+        // 执行脚本（传入 connectionId）
+        try {
+          await window.ELECTRON_BRIDGE.executeScript({
+            scriptId: moduleId,
+            version: version,
+            isRemote: true,
+            sshServerId: connId, // 传 connectionId，不是 serverId
+          });
+        } catch (err) {
+          const body = document.getElementById(`terminal-moduleId + "-remote"-body`);
+          if (body) body.innerHTML += `<span class="line-error">启动失败: ${err.message}</span>`;
+        }
+      };
+
+      // 插入远程运行按钮
+      viewBtn.parentNode.insertBefore(remoteRunBtn, viewBtn.nextSibling);
     });
   }
 
@@ -505,5 +585,82 @@
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });
+
+  // ================================================================
+  // 自动更新提示
+  // ================================================================
+  let updateToast = null;
+  function showUpdateToast({ status, version, notes, percent }) {
+    // 移除旧提示
+    const old = document.getElementById('et-update-toast');
+    if (old) old.remove();
+
+    if (status === 'no-url') return;
+
+    const toast = document.createElement('div');
+    toast.id = 'et-update-toast';
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 999999;
+      background: #1e1e1e;
+      border: 1px solid #3d3d3d;
+      border-radius: 12px;
+      padding: 16px 20px;
+      max-width: 360px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+      animation: slideIn 0.3s ease;
+    `;
+
+    if (status === 'checking') {
+      toast.innerHTML = `<div style="color:#d4d4d4;font-size:0.9rem;">🔄 正在检查更新...</div>`;
+    } else if (status === 'available') {
+      toast.innerHTML = `
+        <div style="color:#89d185;font-size:0.95rem;font-weight:600;margin-bottom:8px;">🎉 发现新版本 v${version}</div>
+        <div style="color:#888;font-size:0.82rem;margin-bottom:12px;">${notes ? (typeof notes === 'string' ? notes : '') : (version ? '点击下载' : '')}</div>
+        <button id="et-update-download" style="background:#e95420;color:white;border:none;border-radius:8px;padding:8px 20px;cursor:pointer;font-size:0.85rem;">下载更新</button>
+      `;
+      document.body.appendChild(toast);
+      document.getElementById('et-update-download').onclick = async () => {
+        await window.ELECTRON_BRIDGE.updaterDownload();
+      };
+      return;
+    } else if (status === 'downloading') {
+      toast.innerHTML = `
+        <div style="color:#d4d4d4;font-size:0.9rem;margin-bottom:8px;">📥 正在下载更新...</div>
+        <div style="background:#333;border-radius:6px;height:6px;overflow:hidden;"><div style="background:#e95420;height:100%;width:${percent || 0}%;transition:width 0.3s;"></div></div>
+        <div style="color:#888;font-size:0.78rem;margin-top:4px;">${(percent || 0).toFixed(1)}%</div>
+      `;
+    } else if (status === 'ready') {
+      toast.innerHTML = `
+        <div style="color:#89d185;font-size:0.95rem;font-weight:600;margin-bottom:8px;">✅ 更新已下载完成</div>
+        <div style="color:#888;font-size:0.82rem;margin-bottom:12px;">v${version} 准备就绪</div>
+        <button id="et-update-install" style="background:#1a7f37;color:white;border:none;border-radius:8px;padding:8px 20px;cursor:pointer;font-size:0.85rem;">重启并更新</button>
+      `;
+      document.body.appendChild(toast);
+      document.getElementById('et-update-install').onclick = () => {
+        window.ELECTRON_BRIDGE.updaterInstall();
+      };
+      return;
+    } else if (status === 'up-to-date') {
+      // 不提示，已是最新
+      return;
+    } else if (status === 'error') {
+      toast.innerHTML = `<div style="color:#f48771;font-size:0.85rem;">更新检查失败: ${notes || '未知错误'}</div>`;
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    document.body.appendChild(toast);
+
+    // 自动消失
+    if (status !== 'ready' && status !== 'available') {
+      setTimeout(() => toast.remove(), 5000);
+    }
+  }
+
+  // 监听更新状态
+  window.ELECTRON_BRIDGE.onUpdaterStatus(showUpdateToast);
 
 })();

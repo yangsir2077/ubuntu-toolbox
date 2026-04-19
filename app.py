@@ -456,10 +456,14 @@ def index():
 @app.route('/electron/electron.js')
 def serve_electron_js():
     """Electron 桌面版专用渲染层脚本"""
-    electron_dir = os.path.join(APP_DIR, 'electron', 'src', 'renderer')
-    electron_js = os.path.join(electron_dir, 'electron.js')
-    if os.path.exists(electron_js):
-        return send_file(electron_js, mimetype='application/javascript')
+    # 尝试多个可能路径
+    paths_to_try = [
+        os.path.join(APP_DIR, 'electron', 'src', 'renderer', 'electron.js'),
+        os.path.join(APP_DIR, 'resources', 'app', 'src', 'renderer', 'electron.js'),
+    ]
+    for p in paths_to_try:
+        if os.path.exists(p):
+            return send_file(p, mimetype='application/javascript')
     return "// Electron renderer not found", 404
 
 
@@ -894,4 +898,5 @@ python3 app.py
 # 启动
 # ================================================================
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    _debug = os.environ.get('ELECTRON_FLASK_ROOT', '') == ''
+    app.run(host='0.0.0.0', port=int(os.environ.get('FLASK_PORT', 5000)), debug=_debug)

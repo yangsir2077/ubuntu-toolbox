@@ -3,6 +3,7 @@
  */
 const { ipcMain } = require('electron');
 const { getFlaskUrl } = require('./flask-server');
+const { checkForUpdates, downloadUpdate, quitAndInstall } = require('./updater');
 const {
   executeScript,
   terminateScript,
@@ -82,6 +83,19 @@ function registerIpcHandlers(mainWindow) {
   ipcMain.handle('electron:showItemInFolder', async (event, filePath) => {
     require('electron').shell.showItemInFolder(filePath);
     return true;
+  });
+
+  // -------- 自动更新 --------
+  ipcMain.handle('updater:check', async (event) => {
+    return await checkForUpdates(event.sender.getOwnerBrowserWindow());
+  });
+
+  ipcMain.handle('updater:download', async () => {
+    return await downloadUpdate();
+  });
+
+  ipcMain.handle('updater:install', async () => {
+    quitAndInstall();
   });
 }
 

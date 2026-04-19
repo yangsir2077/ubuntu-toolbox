@@ -58,8 +58,8 @@ esac
 echo "==> 打包目标: $TARGET"
 echo "==> 这可能需要几分钟，请耐心等待..."
 
-# 执行打包
-npx electron-builder $TARGETS
+# 执行打包（使用国内镜像下载 Electron）
+ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/" npx electron-builder $TARGETS
 
 echo ""
 echo "========================================"

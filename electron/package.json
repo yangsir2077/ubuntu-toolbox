@@ -3,22 +3,29 @@
   "version": "1.0.0",
   "description": "Ubuntu 工具箱桌面版 - 跨平台桌面应用",
   "main": "src/main/index.js",
+  "homepage": "https://github.com/yangsir/ubuntu-toolbox",
+  "author": {
+    "name": "yangsir",
+    "email": "yangsir@example.com"
+  },
   "scripts": {
-    "dev": "electron .",
+    "dev": "ELECTRON_FLASK_ROOT=/media/yhj/data/ubuntu-toolbox ./node_modules/electron/dist/electron .",
+    "dev:local": "./node_modules/electron/dist/electron .",
     "build:linux": "electron-builder --linux",
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
     "build:all": "electron-builder -mwl",
     "postinstall": "electron-builder install-app-deps"
   },
-  "author": "yangsir",
   "license": "MIT",
   "devDependencies": {
     "electron": "^33.0.0",
     "electron-builder": "^25.1.8"
   },
   "dependencies": {
-    "electron-store": "^10.0.0",
+    "electron-log": "^5.4.3",
+    "electron-store": "^8.2.0",
+    "electron-updater": "^6.8.3",
     "node-pty": "^1.0.0",
     "ssh2": "^1.16.0",
     "uuid": "^11.0.0"

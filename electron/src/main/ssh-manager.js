@@ -23,16 +23,17 @@ function sshConnect(config) {
       clearTimeout(timeout);
       console.log(`[SSH] Connected to ${config.host}`);
 
+      const serverConfigId = config.id || null; // 保存原始服务器配置的 ID
       activeConnections.set(connectionId, {
         client: conn,
         config: {
           id: connectionId,
+          serverConfigId,
           name: config.name || config.host,
           host: config.host,
           port: config.port || 22,
           username: config.username,
           authType: config.authType, // 'password' | 'privateKey'
-          // 不存储明文密码
         },
         connectedAt: Date.now(),
       });
@@ -143,14 +144,14 @@ function _getConnection(id) {
 
 // 获取当前活跃连接列表
 function sshGetConnections() {
-  return Array.from(activeConnections.values()).map(c => ({
-    id: c.config.id,
+  return Array.from(activeConnections.entries()).map(([connectionId, c]) => ({
+    connectionId,
+    serverId: c.config.serverConfigId || c.config.id,
     name: c.config.name,
     host: c.config.host,
     port: c.config.port,
     username: c.config.username,
     connectedAt: c.connectedAt,
-    // 不暴露敏感信息
   }));
 }
 

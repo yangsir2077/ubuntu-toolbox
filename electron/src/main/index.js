@@ -8,6 +8,7 @@ const path = require('path');
 // 子模块
 const { startFlask, stopFlask, getFlaskUrl } = require('./flask-server');
 const { registerIpcHandlers } = require('./ipc-handlers');
+const { setupUpdaterEvents, checkForUpdates, downloadUpdate, quitAndInstall } = require('./updater');
 
 let mainWindow = null;
 
@@ -50,6 +51,12 @@ function createWindow() {
   // 注册 IPC（把 mainWindow 传进去用于实时推送）
   registerIpcHandlers(mainWindow);
 
+  // 启动更新检查（延迟 3 秒，避免和 Flask 启动竞争）
+  if (process.env.ELECTRON_UPDATE_URL) {
+    setupUpdaterEvents(mainWindow);
+    setTimeout(() => checkForUpdates(mainWindow), 3000);
+  }
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -58,41 +65,109 @@ function createWindow() {
 }
 
 function createMenu() {
+  const isMac = process.platform === 'darwin';
   const template = [
+    // macOS: 第一个item是app名称菜单（关于/退出）
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { label: '关于 Ubuntu 工具箱', click: () => showAbout() },
+        { type: 'separator' },
+        {
+          label: '检查更新...',
+          click: () => checkForUpdates(mainWindow),
+        },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    }] : []),
+
+    // 文件菜单
     {
       label: '文件',
-      submenu: [
-        { label: '刷新', accelerator: 'CmdOrCtrl+R', click: () => mainWindow?.reload() },
+      submenu: isMac ? [] : [
+        {
+          label: '检查更新...',
+          click: () => checkForUpdates(mainWindow),
+        },
         { type: 'separator' },
-        { label: '开发者工具', accelerator: 'CmdOrCtrl+Shift+I', click: () => mainWindow?.webContents.openDevTools() },
+        {
+          label: '打开数据目录',
+          click: () => shell.openPath(app.getPath('userData')),
+        },
         { type: 'separator' },
         { label: '退出', accelerator: 'CmdOrCtrl+Q', click: () => app.quit() },
       ],
     },
+
+    // 编辑菜单（标准编辑操作）
+    {
+      label: '编辑',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        ...(isMac ? [
+          { role: 'pasteAndMatchStyle' },
+          { role: 'delete' },
+          { role: 'selectAll' },
+        ] : [
+          { role: 'delete' },
+          { type: 'separator' },
+          { role: 'selectAll' },
+        ]),
+      ],
+    },
+
+    // 视图菜单
     {
       label: '视图',
       submenu: [
-        { label: '放大', accelerator: 'CmdOrCtrl+=', role: 'zoomIn' },
-        { label: '缩小', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
-        { label: '重置缩放', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
         { type: 'separator' },
-        { label: '全屏', accelerator: 'F11', role: 'togglefullscreen' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
       ],
     },
+
+    // 窗口菜单
+    {
+      label: '窗口',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        ...(isMac ? [
+          { type: 'separator' },
+          { role: 'front' },
+          { type: 'separator' },
+          { role: 'window' },
+        ] : [
+          { role: 'close' },
+        ]),
+      ],
+    },
+
+    // 帮助菜单
     {
       label: '帮助',
       submenu: [
         {
-          label: '关于',
-          click: () => {
-            const { dialog } = require('electron');
-            dialog.showMessageBox(mainWindow, {
-              type: 'info',
-              title: '关于 Ubuntu 工具箱',
-              message: 'Ubuntu 工具箱 v1.0.0',
-              detail: '跨平台桌面应用\nElectron + Flask\n支持本地/远程 Ubuntu 系统管理',
-            });
-          },
+          label: '关于 Ubuntu 工具箱',
+          click: () => showAbout(),
         },
         {
           label: '打开数据目录',
@@ -103,6 +178,16 @@ function createMenu() {
   ];
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+function showAbout() {
+  const { dialog } = require('electron');
+  dialog.showMessageBox(mainWindow, {
+    type: 'info',
+    title: '关于 Ubuntu 工具箱',
+    message: 'Ubuntu 工具箱',
+    detail: `版本 ${app.getVersion()}\n跨平台桌面应用\nElectron + Flask\n支持本地/远程 Ubuntu 系统管理`,
+  });
 }
 
 // ================================================================

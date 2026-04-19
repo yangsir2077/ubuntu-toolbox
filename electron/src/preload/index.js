@@ -58,4 +58,12 @@ contextBridge.exposeInMainWorld('ELECTRON_BRIDGE', {
   isLinux: process.platform === 'linux',
   isMac: process.platform === 'darwin',
   isWindows: process.platform === 'win32',
+
+  // -------- 自动更新 --------
+  updaterCheck: () => ipcRenderer.invoke('updater:check'),
+  updaterDownload: () => ipcRenderer.invoke('updater:download'),
+  updaterInstall: () => ipcRenderer.invoke('updater:install'),
+  onUpdaterStatus: (callback) => {
+    ipcRenderer.on('updater:status', (event, data) => callback(data));
+  },
 });

@@ -4,23 +4,25 @@
 appId: com.ubuntu-toolbox.desktop
 productName: Ubuntu 工具箱
 copyright: Copyright © 2026 yangsir
+electronVersion: 33.0.0
 
 # 通用文件
 files:
   - src/main/**/*
   - src/preload/**/*
   - src/renderer/**/*
-  # 包含原始 Flask 项目（作为数据文件）
-  - ../app.py
-  - ../scripts/**/*
-  - ../templates/**/*
-  - ../static/**/*
-  - ../requirements.txt
+  - node_modules/**/*
 
-# 打包时排除
-externals:
-  - node-pty
-  - ssh2
+# 额外资源文件（用于 Flask 项目，不打入 asar）
+extraResources:
+  - from: ../
+    to: ../
+    filter:
+      - app.py
+      - scripts/**/*
+      - templates/**/*
+      - static/**/*
+      - requirements.txt
 
 # nsis 自定义配置
 nsis:
@@ -44,9 +46,7 @@ dmg:
       type: link
       path: /Applications
 
-# AppImage 配置
-appImage:
-  license: ../LICENSE
+
 
 # Linux 配置
 linux:
@@ -54,6 +54,7 @@ linux:
     - AppImage
     - deb
   category: Utility
+  maintainer: yangsir <yangsir@example.com>
   icon: assets/icon.png
 
 # macOS 配置
@@ -69,6 +70,6 @@ win:
     - nsis
   icon: assets/icon.ico
 
-# ASAR 打包（性能优化）
-asar: true
+# 不使用 ASAR（Flask 项目文件需要能被 subprocess 读取）
+asar: false
 compression: maximum

@@ -1,0 +1,15 @@
+{
+  "version": "1.1.0",
+  "date": "2026-04-20",
+  "notes": "修复终端中文乱码问题\n新增 SSH 远程执行功能\n新增自动更新功能",
+  "files": [
+    {
+      "url": "Ubuntu Toolbox-1.1.0.AppImage",
+      "sha512": "PLACEHOLDER_SHA512"
+    },
+    {
+      "url": "ubuntu-toolbox-desktop_1.1.0_amd64.deb",
+      "sha512": "PLACEHOLDER_SHA512"
+    }
+  ]
+}

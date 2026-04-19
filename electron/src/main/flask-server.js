@@ -11,8 +11,20 @@ let flaskProcess = null;
 let flaskUrl = '';
 let flaskPort = 38457;
 
-// 获取项目根目录（electron/ 上两级）
-const PROJECT_ROOT = path.resolve(__dirname, '../../..');
+// Flask 项目根目录
+// 优先使用环境变量 ELECTRON_FLASK_ROOT 指定
+// 打包后（asar: false）文件在 resources/app/ 下
+function getProjectRoot() {
+  if (process.env.ELECTRON_FLASK_ROOT) return process.env.ELECTRON_FLASK_ROOT;
+  // 打包后（extraResources 放在 AppImage 根目录）
+  if (process.resourcesPath) {
+    const appRoot = path.dirname(process.resourcesPath); // AppImage 根目录
+    if (require('fs').existsSync(path.join(appRoot, 'app.py'))) return appRoot;
+    return path.join(process.resourcesPath, 'app');
+  }
+  return path.resolve(__dirname, '../../..');
+}
+const PROJECT_ROOT = getProjectRoot();
 const APP_PY = path.join(PROJECT_ROOT, 'app.py');
 
 function startFlask(port) {
@@ -74,6 +86,12 @@ function startFlask(port) {
       // 忽略常见无害警告
       if (msg.includes('Warning') || msg.includes('DeprecationWarning')) return;
       console.log('[Flask stderr]', msg);
+      // 检测 Flask 启动成功
+      if (!started && msg.includes('Running on')) {
+        started = true;
+        console.log('[Flask] Server started successfully');
+        resolve();
+      }
     });
 
     flaskProcess.on('error', (err) => {
