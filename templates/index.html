@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ubuntu 工具箱 - 系统管理可视化工具</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #E95420;
+            --primary-dark: #c4451b;
+            --secondary: #333333;
+            --accent: #772953;
+            --bg: #f7f7f7;
+            --card-bg: #ffffff;
+            --text: #2b2b2b;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            min-height: 100vh;
+        }
+        .main-header {
+            background: linear-gradient(135deg, var(--secondary) 0%, #1a1a1a 100%);
+            color: white;
+            padding: 2.5rem 0;
+            margin-bottom: 2rem;
+        }
+        .main-header .ubuntu-logo { font-size: 3rem; color: var(--primary); }
+        .main-header h1 { font-weight: 700; font-size: 2rem; margin: 0.5rem 0; }
+        .main-header .subtitle { opacity: 0.7; font-size: 1rem; }
+        .hero-tip {
+            background: #fff3e0;
+            border-left: 4px solid var(--primary);
+            border-radius: 0 8px 8px 0;
+            padding: 0.8rem 1rem;
+            font-size: 0.88rem;
+            color: #555;
+            margin-top: 1rem;
+        }
+        .hero-tip i { color: var(--primary); }
+
+        /* Module Cards */
+        .module-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            height: 100%;
+            position: relative;
+        }
+        .module-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        .module-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .module-icon { font-size: 2.5rem; line-height: 1; }
+        .module-title { font-size: 1.2rem; font-weight: 700; margin: 0; }
+        .module-os { font-size: 0.8rem; color: #888; }
+        .module-body { padding: 1.5rem; }
+        .module-desc { color: #666; font-size: 0.95rem; margin-bottom: 1rem; }
+        .instructions-list {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem 1rem 1rem 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .instructions-list li {
+            font-size: 0.88rem;
+            color: #555;
+            margin-bottom: 0.4rem;
+            line-height: 1.5;
+        }
+        .script-preview {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 10px;
+            padding: 1rem;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.78rem;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        /* Buttons */
+        .btn-ubuntu {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .btn-ubuntu:hover { background: var(--primary-dark); color: white; }
+        .btn-copy {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            font-size: 0.88rem;
+            transition: all 0.2s;
+        }
+        .btn-copy:hover { background: #555; color: white; }
+        .run-tip {
+            background: #f0f9ff;
+            border: 1px solid #b3e0ff;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-top: 0.75rem;
+        }
+        .run-tip h6 { color: #0070c0; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .run-cmd {
+            background: #1e1e1e;
+            color: #aadfee;
+            border-radius: 8px;
+            padding: 0.6rem 0.9rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* Recommended badge */
+        .badge-recommended {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--primary);
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            z-index: 5;
+        }
+
+        /* Version selector */
+        .version-select {
+            border: 1.5px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.85rem;
+            color: var(--secondary);
+            background: white;
+            width: 100%;
+            margin-bottom: 0.75rem;
+            transition: border-color 0.2s;
+        }
+        .version-select:focus { outline: none; border-color: var(--primary); }
+
+        /* 功能一：效果预览 */
+        .preview-panel {
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 0.75rem;
+        }
+        .preview-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.65rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--secondary);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s;
+        }
+        .preview-toggle:hover { background: #f0f0f0; }
+        .preview-toggle.open .chevron { transform: rotate(180deg); }
+        .preview-body { display: none; padding: 0 1rem 1rem; min-height: 200px; }
+        .preview-body.open { display: block; }
+        .preview-toggle .chevron { transition: transform 0.25s; margin-left: auto; }
+        .preview-image {
+            width: 100%;
+            max-height: 340px;
+            object-fit: contain;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            background: #f8f8f8;
+            display: block;
+            margin-bottom: 0.75rem;
+        }
+        .preview-placeholder {
+            width: 100%;
+            height: 180px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            font-size: 0.82rem;
+            border: 1px dashed #ccc;
+            margin-bottom: 0.75rem;
+        }
+        .preview-text { font-size: 0.85rem; color: #666; line-height: 1.6; }
+
+        /* 功能二：版本检测 */
+        .version-detect-section {
+            background: linear-gradient(135deg, var(--secondary) 0%, #444 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .version-detect-section h5 { font-weight: 700; margin-bottom: 0.75rem; }
+        .version-input-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+        .version-input-group input {
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            font-size: 1rem;
+            border: none;
+            flex: 1;
+            min-width: 140px;
+        }
+        .version-result { margin-top: 0.75rem; font-size: 0.88rem; display: none; }
+        .version-result.show { display: block; }
+        .version-chip {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            border-radius: 20px;
+            padding: 0.3rem 0.8rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* 功能三：日志解析 */
+        .log-analyzer-section {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 1.75rem;
+            margin-bottom: 2rem;
+        }
+        .log-analyzer-section h5 { font-weight: 700; color: var(--secondary); margin-bottom: 1rem; }
+        .log-textarea {
+            border: 1.5px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.82rem;
+            resize: vertical;
+            min-height: 140px;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .log-textarea:focus { outline: none; border-color: var(--primary); }
+        .log-result { margin-top: 1rem; display: none; }
+        .log-result.show { display: block; }
+        .log-error-item { border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.6rem; border-left: 4px solid; }
+        .log-error-item.error { background: #fff3f3; border-color: #e53935; }
+        .log-error-item.warning { background: #fffbf0; border-color: #fb8c00; }
+        .log-error-item.info { background: #f0f7ff; border-color: #1e88e5; }
+        .log-error-label { font-weight: 700; font-size: 0.82rem; margin-bottom: 0.25rem; }
+        .log-error-item.error .log-error-label { color: #e53935; }
+        .log-error-item.warning .log-error-label { color: #fb8c00; }
+        .log-error-item.info .log-error-label { color: #1e88e5; }
+        .log-matched-line {
+            font-family: monospace;
+            font-size: 0.78rem;
+            color: #888;
+            background: rgba(0,0,0,0.05);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            margin: 0.3rem 0;
+            word-break: break-all;
+        }
+        .log-solution { font-size: 0.85rem; color: #444; margin-top: 0.3rem; line-height: 1.5; }
+
+        /* 功能四：Cron */
+        .cron-support-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.75rem;
+            color: #888;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 0.2rem 0.6rem;
+            margin-left: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .cron-support-tag:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Modals */
+        .modal-header { background: var(--secondary); color: white; }
+        .modal-header .btn-close { filter: invert(1); }
+        .modal-title-icon { margin-right: 0.5rem; }
+        .code-wrapper { position: relative; }
+        .code-copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 10;
+        }
+        .cron-cmd-display {
+            background: #1e1e1e;
+            color: #a5d6ff;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            word-break: break-all;
+            line-height: 1.6;
+        }
+        .cron-step { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.5rem 0; font-size: 0.88rem; line-height: 1.5; }
+        .cron-step-num {
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        footer { text-align: center; padding: 2rem; color: #999; font-size: 0.85rem; }
+
+        .toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; }
+        .toast-custom {
+            background: var(--secondary);
+            color: white;
+            border-radius: 10px;
+            padding: 0.8rem 1.2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+            margin-top: 0.5rem;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .download-section {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        .download-section h3 { font-weight: 700; }
+
+        .section-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .section-title i { color: var(--primary); }
+        .section-divider { border: none; border-top: 1px solid #eee; margin: 2rem 0; }
+
+        @media (max-width: 768px) {
+            .main-header { padding: 1.5rem 0; }
+            .main-header h1 { font-size: 1.5rem; }
+            .module-card { margin-bottom: 1rem; }
+            .version-input-group input { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- HEADER -->
+<header class="main-header">
+    <div class="container">
+        <div class="d-flex align-items-center gap-3">
+            <div class="ubuntu-logo">🐧</div>
+            <div>
+                <h1>Ubuntu 工具箱</h1>
+                <p class="subtitle mb-0">Linux 系统管理可视化工具 · Flask Web</p>
+            </div>
+        </div>
+        <div class="hero-tip">
+            <i class="bi bi-lightbulb-fill"></i>
+            &nbsp;本页面提供操作说明和脚本命令。实际脚本需要在 <strong>Ubuntu 实体机</strong>上以 <code>sudo</code> 权限运行。
+        </div>
+    </div>
+</header>
+
+<main class="container pb-5">
+
+    <!-- ========== 功能二：版本检测 ========== -->
+    <div class="section-title"><i class="bi bi-search"></i> Ubuntu 版本检测 + 脚本推荐</div>
+    <div class="version-detect-section" style="margin-bottom:1.5rem;">
+        <h5><i class="bi bi-disc"></i> Ubuntu 版本自动检测</h5>
+        <div class="version-input-group">
+            <button class="btn btn-ubuntu" id="btnAutoDetect" onclick="autoDetectVersion()" style="white-space:nowrap;">
+                <i class="bi bi-cpu"></i> 自动检测本机版本
+            </button>
+            <input type="text" id="ubuntuVersionInput" class="form-control"
+                   placeholder="或手动输入版本号，如 22.04" value="" style="max-width:200px;">
+            <button class="btn btn-outline-light" id="btnDetect" onclick="detectVersion()" style="white-space:nowrap;">
+                <i class="bi bi-search"></i> 手动检测
+            </button>
+        </div>
+        <div class="version-input-group" style="margin-top:0.5rem; align-items:center;">
+            <span style="font-size:0.8rem; opacity:0.6;">自动检测将读取本机真实版本号（大版本自动归类，如 22.04.1 → 22.04）</span>
+        </div>
+        <div class="version-result" id="versionResult" style="margin-top:0.75rem;">
+            <span class="version-chip" id="versionChip"></span>
+            <span id="versionMessage" style="margin-left:0.75rem; font-size:0.88rem; opacity:0.9;"></span>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ========== 功能模块卡片（Jinja2 服务端渲染） ========== -->
+    <div class="section-title"><i class="bi bi-grid-3x3-gap-fill"></i> 功能模块</div>
+    <div class="row g-4 mb-4">
+
+        <!-- 微信 -->
+        <div class="col-md-6 col-lg-6" id="card_wrap_wechat">
+            <div class="module-card">
+                <div id="badge_wechat"></div>
+                <div class="module-header">
+                    <div class="module-icon">💬</div>
+                    <div>
+                        <h5 class="module-title">微信 (WeChat)</h5>
+                        <div class="module-os"><i class="bi bi-pc"></i> Ubuntu 20.04 / 22.04 / 24.04</div>
+                    </div>
+                </div>
+                <div class="module-body">
+                    <p class="module-desc">通过 Snap 安装 electronic-wechat（Deepin Wine 源已失效，改用 Snap 方案）</p>
+
+                    <!-- 版本选择 -->
+                    <select class="version-select" id="ver_wechat"
+                            onchange="switchVersion('wechat', this.value)">
+                        <option value="">通用版本</option>
+                        <option value="20.04">Ubuntu 20.04</option>
+                        <option value="22.04">Ubuntu 22.04</option>
+                        <option value="24.04">Ubuntu 24.04</option>
+                    </select>
+
+                    <h6 class="small fw-bold text-muted mb-2"><i class="bi bi-list-check"></i> 操作要点</h6>
+                    <ul class="instructions-list mb-2">
+                        <li>系统要求：Ubuntu 20.04 及以上版本</li>
+                        <li>使用 Snap 安装 electronic-wechat（开源微信客户端）</li>
+                        <li>安装后可在应用列表找到并启动微信</li>
+                        <li>启动命令：<code>snap run electronic-wechat</code></li>
+                        <li>⚠️ 注意：Deepin Wine 源已失效，改为 Snap 方案</li>
+                    </ul>
+
+                    <!-- 效果预览（功能一） -->
+                    <div class="preview-panel">
+                        <div class="preview-toggle" id="ptoggle_wechat"
+                             onclick="togglePreview('wechat')">
+                            <i class="bi bi-eye-fill"></i><span>效果预览</span>
+                            <i class="bi bi-chevron-down chevron" id="pchevron_wechat"></i>
+                        </div>
+                        <div class="preview-body" id="pbody_wechat">
+                            <img src="/static/previews/wechat.png" class="preview-image" alt="微信截图" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="preview-placeholder" style="display:none;"><i class="bi bi-image"></i> &nbsp;图片加载失败</div>
+                            <p class="preview-text">脚本执行后，通过 Snap 安装微信。启动方式：在应用菜单搜索 "WeChat" 或运行 <code>snap run electronic-wechat</code>。</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap mt-2">
+                        <button class="btn btn-ubuntu flex-grow-1"
+                                onclick="openModal('wechat')">
+                            <i class="bi bi-code-slash"></i> 查看脚本
+                        </button>
+                        <button class="btn btn-copy" onclick="copyScript('wechat', '')">
+                            <i class="bi bi-clipboard"></i> 复制
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QQ -->
+        <div class="col-md-6 col-lg-6" id="card_wrap_qq">
+            <div class="module-card">
+                <div id="badge_qq"></div>
+                <div class="module-header">
+                    <div class="module-icon">🐧</div>
+                    <div>
+                        <h5 class="module-title">QQ</h5>
+                        <div class="module-os"><i class="bi bi-pc"></i> Ubuntu 20.04 / 22.04 / 24.04</div>
+                    </div>
+                </div>
+                <div class="module-body">
+                    <p class="module-desc">通过 Snap 安装 icalingua（Deepin Wine 源已失效，改用 Electron 版 QQ）</p>
+
+                    <select class="version-select" id="ver_qq"
+                            onchange="switchVersion('qq', this.value)">
+                        <option value="">通用版本</option>
+                        <option value="20.04">Ubuntu 20.04</option>
+                        <option value="22.04">Ubuntu 22.04</option>
+                        <option value="24.04">Ubuntu 24.04</option>
+                    </select>
+
+                    <h6 class="small fw-bold text-muted mb-2"><i class="bi bi-list-check"></i> 操作要点</h6>
+                    <ul class="instructions-list mb-2">
+                        <li>系统要求：Ubuntu 20.04 及以上版本</li>
+                        <li>使用 Snap 安装 icalingua（Electron 开源 QQ 客户端）</li>
+                        <li>支持消息、群聊、文件传输等基础功能</li>
+                        <li>启动命令：<code>snap run icalingua</code></li>
+                        <li>⚠️ 注意：Deepin Wine 源已失效，改为 Snap 方案</li>
+                    </ul>
+
+                    <!-- 效果预览 -->
+                    <div class="preview-panel">
+                        <div class="preview-toggle" id="ptoggle_qq"
+                             onclick="togglePreview('qq')">
+                            <i class="bi bi-eye-fill"></i><span>效果预览</span>
+                            <i class="bi bi-chevron-down chevron" id="pchevron_qq"></i>
+                        </div>
+                        <div class="preview-body" id="pbody_qq">
+                            <img src="/static/previews/qq.png" class="preview-image" alt="QQ截图" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="preview-placeholder" style="display:none;"><i class="bi bi-image"></i> &nbsp;图片加载失败</div>
+                            <p class="preview-text">脚本执行后，通过 Snap 安装 QQ。启动方式：在应用菜单搜索 "icalingua" 或运行 <code>snap run icalingua</code>。</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap mt-2">
+                        <button class="btn btn-ubuntu flex-grow-1"
+                                onclick="openModal('qq')">
+                            <i class="bi bi-code-slash"></i> 查看脚本
+                        </button>
+                        <button class="btn btn-copy" onclick="copyScript('qq', '')">
+                            <i class="bi bi-clipboard"></i> 复制
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 自动登录 -->
+        <div class="col-md-6 col-lg-6" id="card_wrap_auto_login">
+            <div class="module-card">
+                <div id="badge_auto_login"></div>
+                <div class="module-header">
+                    <div class="module-icon">🔐</div>
+                    <div>
+                        <h5 class="module-title">自动登录配置
+                            <span class="cron-support-tag" onclick="openCronModal('auto_login')"
+                                  title="设置定时执行"><i class="bi bi-clock"></i> 定时执行</span>
+                        </h5>
+                        <div class="module-os"><i class="bi bi-pc"></i> Ubuntu 18.04 及以上 (GDM3)</div>
+                    </div>
+                </div>
+                <div class="module-body">
+                    <p class="module-desc">配置 Ubuntu 自动登录，无需输入密码即可进入桌面</p>
+
+                    <h6 class="small fw-bold text-muted mb-2"><i class="bi bi-list-check"></i> 操作要点</h6>
+                    <ul class="instructions-list mb-2">
+                        <li>⚠️ 此操作修改系统认证配置，请谨慎使用</li>
+                        <li>适用于单用户设备，多用户设备建议设置短密码</li>
+                        <li>需要 sudo 权限执行</li>
+                        <li>操作前建议备份配置</li>
+                    </ul>
+
+                    <!-- 效果预览 -->
+                    <div class="preview-panel">
+                        <div class="preview-toggle" id="ptoggle_auto_login"
+                             onclick="togglePreview('auto_login')">
+                            <i class="bi bi-eye-fill"></i><span>效果预览</span>
+                            <i class="bi bi-chevron-down chevron" id="pchevron_auto_login"></i>
+                        </div>
+                        <div class="preview-body" id="pbody_auto_login">
+                            <img src="/static/previews/auto_login.png" class="preview-image" alt="自动登录截图" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="preview-placeholder" style="display:none;"><i class="bi bi-image"></i> &nbsp;图片加载失败</div>
+                            <p class="preview-text">脚本执行后，Ubuntu 开机将自动登录到当前用户桌面，无需输入密码。重启后生效。</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap mt-2">
+                        <button class="btn btn-ubuntu flex-grow-1"
+                                onclick="openModal('auto_login')">
+                            <i class="bi bi-code-slash"></i> 查看脚本
+                        </button>
+                        <button class="btn btn-copy" onclick="copyScript('auto_login', '')">
+                            <i class="bi bi-clipboard"></i> 复制
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 永不休眠 -->
+        <div class="col-md-6 col-lg-6" id="card_wrap_no_sleep">
+            <div class="module-card">
+                <div id="badge_no_sleep"></div>
+                <div class="module-header">
+                    <div class="module-icon">☀️</div>
+                    <div>
+                        <h5 class="module-title">永不休眠配置
+                            <span class="cron-support-tag" onclick="openCronModal('no_sleep')"
+                                  title="设置定时执行"><i class="bi bi-clock"></i> 定时执行</span>
+                        </h5>
+                        <div class="module-os"><i class="bi bi-pc"></i> Ubuntu 18.04 及以上 (GNOME)</div>
+                    </div>
+                </div>
+                <div class="module-body">
+                    <p class="module-desc">阻止 Ubuntu 息屏、挂起和休眠，保持屏幕常亮</p>
+
+                    <h6 class="small fw-bold text-muted mb-2"><i class="bi bi-list-check"></i> 操作要点</h6>
+                    <ul class="instructions-list mb-2">
+                        <li>通过 gsettings 修改 GNOME 电源管理配置</li>
+                        <li>禁用息屏、挂起、休眠、超时锁定</li>
+                        <li>立即生效，无需重启</li>
+                        <li>支持 Wayland 和 X11 会话</li>
+                    </ul>
+
+                    <!-- 效果预览 -->
+                    <div class="preview-panel">
+                        <div class="preview-toggle" id="ptoggle_no_sleep"
+                             onclick="togglePreview('no_sleep')">
+                            <i class="bi bi-eye-fill"></i><span>效果预览</span>
+                            <i class="bi bi-chevron-down chevron" id="pchevron_no_sleep"></i>
+                        </div>
+                        <div class="preview-body" id="pbody_no_sleep">
+                            <img src="/static/previews/no_sleep.png" class="preview-image" alt="永不休眠截图" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="preview-placeholder" style="display:none;"><i class="bi bi-image"></i> &nbsp;图片加载失败</div>
+                            <p class="preview-text">脚本执行后，Ubuntu 将保持屏幕常亮，不会自动息屏、挂起或休眠。立即生效，重启后需重新运行。</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap mt-2">
+                        <button class="btn btn-ubuntu flex-grow-1"
+                                onclick="openModal('no_sleep')">
+                            <i class="bi bi-code-slash"></i> 查看脚本
+                        </button>
+                        <button class="btn btn-copy" onclick="copyScript('no_sleep', '')">
+                            <i class="bi bi-clipboard"></i> 复制
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 更多工具（折叠） ========== -->
+        <div class="d-flex justify-content-center my-4">
+            <button class="btn btn-outline-primary btn-lg px-5" onclick="toggleMoreTools()" style="border-radius:50px; min-width:220px;">
+                <i class="bi bi-chevron-double-down" id="toggleMoreIcon"></i>
+                <span id="toggleMoreText">展开更多工具</span>
+            </button>
+        </div>
+        <div id="moreToolsContent" style="display:none;">
+            <div class="row g-4">
+                <!-- ========== 功能二（新）：软件源/开发环境/系统工具 ========== -->
+                <div class="col-md-6 col-lg-6" id="card_wrap_software_source">
+                    <div class="module-card">
+                        <div id="badge_software_source"></div>
+                        <div class="module-header">
+                            <div class="module-icon">🔄</div>
+                            <div>
+                                <h5 class="module-title">更换国内软件源</h5>
+                                <div class="module-os"><i class="bi bi-pc"></i> Ubuntu 全版本</div>
+                            </div>
+                        </div>
+                        <div class="module-body">
+                            <p class="module-desc">一键切换阿里云/清华/中科大源，解决 apt 下载慢、更新失败问题</p>
+                            <ul class="instructions-list mb-2">
+                                <li>支持阿里云、清华、中科大三大镜像源</li>
+                                <li>自动备份原 sources.list 文件</li>
+                                <li>切换后自动执行 apt update</li>
+                                <li>如遇问题可从备份文件恢复</li>
+                            </ul>
+                            <div class="preview-panel">
+                                <div class="preview-toggle" id="ptoggle_software_source" onclick="togglePreview('software_source')">
+                                    <i class="bi bi-eye-fill"></i><span>效果预览</span>
+                                    <i class="bi bi-chevron-down chevron" id="pchevron_software_source"></i>
+                                </div>
+                                <div class="preview-body" id="pbody_software_source">
+                                    <p class="preview-text">脚本执行后，apt 软件源将切换为国内镜像（阿里/清华/中科大），下载速度大幅提升。</p>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap mt-2">
+                                <button class="btn btn-ubuntu flex-grow-1" onclick="openModal('software_source')">
+                                    <i class="bi bi-code-slash"></i> 查看脚本
+                                </button>
+                                <button class="btn btn-copy" onclick="copyScript('software_source', '')">
+                                    <i class="bi bi-clipboard"></i> 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6" id="card_wrap_dev_env">
+                    <div class="module-card">
+                        <div id="badge_dev_env"></div>
+                        <div class="module-header">
+                            <div class="module-icon">🛠️</div>
+                            <div>
+                                <h5 class="module-title">开发基础环境</h5>
+                                <div class="module-os"><i class="bi bi-pc"></i> Ubuntu 20.04 / 22.04 / 24.04</div>
+                            </div>
+                        </div>
+                        <div class="module-body">
+                            <p class="module-desc">一键安装 git、curl、wget、build-essential、python3-pip、nodejs、npm、vscode</p>
+                            <ul class="instructions-list mb-2">
+                                <li>批量安装开发常用工具（git、curl、wget 等）</li>
+                                <li>安装 Node.js LTS 版本</li>
+                                <li>安装 VS Code 编辑器</li>
+                                <li>适用于新装 Ubuntu 后快速搭建开发环境</li>
+                            </ul>
+                            <div class="preview-panel">
+                                <div class="preview-toggle" id="ptoggle_dev_env" onclick="togglePreview('dev_env')">
+                                    <i class="bi bi-eye-fill"></i><span>效果预览</span>
+                                    <i class="bi bi-chevron-down chevron" id="pchevron_dev_env"></i>
+                                </div>
+                                <div class="preview-body" id="pbody_dev_env">
+                                    <p class="preview-text">脚本执行后，将自动安装开发必备工具：Git、Node.js、npm、VS Code、Python pip 等，一次配齐。</p>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap mt-2">
+                                <button class="btn btn-ubuntu flex-grow-1" onclick="openModal('dev_env')">
+                                    <i class="bi bi-code-slash"></i> 查看脚本
+                                </button>
+                                <button class="btn btn-copy" onclick="copyScript('dev_env', '')">
+                                    <i class="bi bi-clipboard"></i> 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6" id="card_wrap_system_cleanup">
+                    <div class="module-card">
+                        <div id="badge_system_cleanup"></div>
+                        <div class="module-header">
+                            <div class="module-icon">🧹</div>
+                            <div>
+                                <h5 class="module-title">系统清理
+                                    <span class="cron-support-tag" onclick="openCronModal('system_cleanup')" title="设置定时执行"><i class="bi bi-clock"></i> 定时执行</span>
+                                </h5>
+                                <div class="module-os"><i class="bi bi-pc"></i> Ubuntu 全版本</div>
+                            </div>
+                        </div>
+                        <div class="module-body">
+                            <p class="module-desc">清理 apt 缓存、旧内核、无用依赖、系统日志、缩略图，释放磁盘空间</p>
+                            <ul class="instructions-list mb-2">
+                                <li>清理 apt 缓存和不再需要的依赖包</li>
+                                <li>卸载旧内核（保留当前使用的内核）</li>
+                                <li>清理系统日志（限制在 50MB）</li>
+                                <li>清理缩略图缓存和临时文件</li>
+                            </ul>
+                            <div class="preview-panel">
+                                <div class="preview-toggle" id="ptoggle_system_cleanup" onclick="togglePreview('system_cleanup')">
+                                    <i class="bi bi-eye-fill"></i><span>效果预览</span>
+                                    <i class="bi bi-chevron-down chevron" id="pchevron_system_cleanup"></i>
+                                </div>
+                                <div class="preview-body" id="pbody_system_cleanup">
+                                    <p class="preview-text">脚本执行后，自动清理旧内核、apt 缓存、系统日志、缩略图等无用文件，释放磁盘空间。</p>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap mt-2">
+                                <button class="btn btn-ubuntu flex-grow-1" onclick="openModal('system_cleanup')">
+                                    <i class="bi bi-code-slash"></i> 查看脚本
+                                </button>
+                                <button class="btn btn-copy" onclick="copyScript('system_cleanup', '')">
+                                    <i class="bi bi-clipboard"></i> 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6" id="card_wrap_auto_update">
+                    <div class="module-card">
+                        <div id="badge_auto_update"></div>
+                        <div class="module-header">
+                            <div class="module-icon">🚫</div>
+                            <div>
+                                <h5 class="module-title">关闭系统自动更新</h5>
+                                <div class="module-os"><i class="bi bi-pc"></i> Ubuntu 18.04 及以上</div>
+                            </div>
+                        </div>
+                        <div class="module-body">
+                            <p class="module-desc">禁用 Ubuntu 后台自动更新和自动下载，避免突然卡顿或强制重启</p>
+                            <ul class="instructions-list mb-2">
+                                <li>卸载 unattended-upgrades 组件</li>
+                                <li>禁用 apt 每日自动更新定时器</li>
+                                <li>设置 apt 不自动下载更新</li>
+                                <li>不影响手动 apt upgrade</li>
+                            </ul>
+                            <div class="preview-panel">
+                                <div class="preview-toggle" id="ptoggle_auto_update" onclick="togglePreview('auto_update')">
+                                    <i class="bi bi-eye-fill"></i><span>效果预览</span>
+                                    <i class="bi bi-chevron-down chevron" id="pchevron_auto_update"></i>
+                                </div>
+                                <div class="preview-body" id="pbody_auto_update">
+                                    <p class="preview-text">脚本执行后，Ubuntu 将不再自动下载和安装更新，避免工作或演示时突然卡顿或重启。</p>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap mt-2">
+                                <button class="btn btn-ubuntu flex-grow-1" onclick="openModal('auto_update')">
+                                    <i class="bi bi-code-slash"></i> 查看脚本
+                                </button>
+                                <button class="btn btn-copy" onclick="copyScript('auto_update', '')">
+                                    <i class="bi bi-clipboard"></i> 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6" id="card_wrap_port_manager">
+                    <div class="module-card">
+                        <div id="badge_port_manager"></div>
+                        <div class="module-header">
+                            <div class="module-icon">🔌</div>
+                            <div>
+                                <h5 class="module-title">端口管理</h5>
+                                <div class="module-os"><i class="bi bi-pc"></i> Ubuntu 全版本</div>
+                            </div>
+                        </div>
+                        <div class="module-body">
+                            <p class="module-desc">输入端口号查看占用进程，一键杀死进程，释放端口</p>
+                            <ul class="instructions-list mb-2">
+                                <li>查看指定端口（如 8080）的占用进程</li>
+                                <li>显示进程 PID、CPU/内存占用、运行时长</li>
+                                <li>支持强制杀死进程（kill -9）</li>
+                                <li>适合开发时端口冲突解决</li>
+                            </ul>
+                            <div class="preview-panel">
+                                <div class="preview-toggle" id="ptoggle_port_manager" onclick="togglePreview('port_manager')">
+                                    <i class="bi bi-eye-fill"></i><span>效果预览</span>
+                                    <i class="bi bi-chevron-down chevron" id="pchevron_port_manager"></i>
+                                </div>
+                                <div class="preview-body" id="pbody_port_manager">
+                                    <p class="preview-text">脚本执行后，输入端口号即可查看占用该端口的进程信息，支持一键杀死进程。</p>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap mt-2">
+                                <button class="btn btn-ubuntu flex-grow-1" onclick="openModal('port_manager')">
+                                    <i class="bi bi-code-slash"></i> 查看脚本
+                                </button>
+                                <button class="btn btn-copy" onclick="copyScript('port_manager', '')">
+                                    <i class="bi bi-clipboard"></i> 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6" id="card_wrap_chinese_input">
+                    <div class="module-card">
+                        <div id="badge_chinese_input"></div>
+                        <div class="module-header">
+                            <div class="module-icon">⌨️</div>
+                            <div>
+                                <h5 class="module-title">安装中文输入法</h5>
+                                <div class="module-os"><i class="bi bi-pc"></i> Ubuntu 20.04 / 22.04</div>
+                            </div>
+                        </div>
+                        <div class="module-body">
+                            <p class="module-desc">一键安装搜狗输入法或谷歌拼音，解决 Ubuntu 无中文输入的问题</p>
+                            <ul class="instructions-list mb-2">
+                                <li>安装 fcitx5 输入法框架</li>
+                                <li>可选搜狗输入法（推荐）或谷歌拼音</li>
+                                <li>自动配置输入法切换</li>
+                                <li>注销重新登录后生效</li>
+                            </ul>
+                            <div class="preview-panel">
+                                <div class="preview-toggle" id="ptoggle_chinese_input" onclick="togglePreview('chinese_input')">
+                                    <i class="bi bi-eye-fill"></i><span>效果预览</span>
+                                    <i class="bi bi-chevron-down chevron" id="pchevron_chinese_input"></i>
+                                </div>
+                                <div class="preview-body" id="pbody_chinese_input">
+                                    <p class="preview-text">脚本执行后，自动安装中文输入法（搜狗/谷歌拼音），在 Ubuntu 中也能流畅输入中文。</p>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap mt-2">
+                                <button class="btn btn-ubuntu flex-grow-1" onclick="openModal('chinese_input')">
+                                    <i class="bi bi-code-slash"></i> 查看脚本
+                                </button>
+                                <button class="btn btn-copy" onclick="copyScript('chinese_input', '')">
+                                    <i class="bi bi-clipboard"></i> 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6" id="card_wrap_ssh_manager">
+                    <div class="module-card">
+                        <div id="badge_ssh_manager"></div>
+                        <div class="module-header">
+                            <div class="module-icon">🖥️</div>
+                            <div>
+                                <h5 class="module-title">SSH 远程管理</h5>
+                                <div class="module-os"><i class="bi bi-pc"></i> Ubuntu 全版本</div>
+                            </div>
+                        </div>
+                        <div class="module-body">
+                            <p class="module-desc">一键开启/关闭 SSH 远程登录，显示本机 IP，方便远程连接</p>
+                            <ul class="instructions-list mb-2">
+                                <li>安装并启动 openssh-server</li>
+                                <li>一键开启/关闭 SSH 服务</li>
+                                <li>显示本机局域网 IP 地址</li>
+                                <li>设置开机自启动</li>
+                            </ul>
+                            <div class="preview-panel">
+                                <div class="preview-toggle" id="ptoggle_ssh_manager" onclick="togglePreview('ssh_manager')">
+                                    <i class="bi bi-eye-fill"></i><span>效果预览</span>
+                                    <i class="bi bi-chevron-down chevron" id="pchevron_ssh_manager"></i>
+                                </div>
+                                <div class="preview-body" id="pbody_ssh_manager">
+                                    <p class="preview-text">脚本执行后，SSH 服务将启动，显示本机 IP 地址，可通过 ssh username@IP 从其他设备远程连接。</p>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap mt-2">
+                                <button class="btn btn-ubuntu flex-grow-1" onclick="openModal('ssh_manager')">
+                                    <i class="bi bi-code-slash"></i> 查看脚本
+                                </button>
+                                <button class="btn btn-copy" onclick="copyScript('ssh_manager', '')">
+                                    <i class="bi bi-clipboard"></i> 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ========== 功能三：日志解析 ========== -->
+    <div class="section-title"><i class="bi bi-bug-fill" style="color:var(--primary);"></i> 脚本执行排错助手</div>
+    <div class="log-analyzer-section">
+        <h5><i class="bi bi-terminal"></i> 粘贴终端日志，智能解析错误</h5>
+        <textarea id="logInput" class="log-textarea" rows="5"
+            placeholder="在这里粘贴你在 Ubuntu 终端执行脚本时遇到的错误输出，例如：&#10;E: Permission denied&#10;bash: curl: command not found&#10;..."></textarea>
+        <div class="d-flex gap-2 mt-2 flex-wrap">
+            <button class="btn btn-ubuntu" onclick="parseLog()">
+                <i class="bi bi-cpu"></i> 解析日志
+            </button>
+            <button class="btn btn-outline-secondary btn-sm"
+                    onclick="document.getElementById('logInput').value=''; document.getElementById('logResults').innerHTML=''; document.getElementById('logResults').classList.remove('show');"
+                    style="border-radius:8px;">
+                <i class="bi bi-arrow-counterclockwise"></i> 清空
+            </button>
+        </div>
+        <div class="log-result" id="logResults"></div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ========== 下载区 ========== -->
+    <div class="download-section">
+        <h3><i class="bi bi-download"></i> 一键下载完整部署包</h3>
+        <p class="mb-3 opacity-75">包含所有脚本 + Flask 应用 + Dockerfile + docker-compose.yml</p>
+        <button class="btn btn-light btn-lg" onclick="downloadPackage()">
+            <i class="bi bi-file-earmark-zip"></i> 下载 ubuntu-toolbox.zip
+        </button>
+    </div>
+</main>
+
+<footer>
+    <div class="container">
+        <p class="mb-1">🐧 Ubuntu Toolbox · Flask + Bootstrap 5</p>
+        <p class="mb-0">适用系统：Ubuntu 18.04 / 20.04 / 22.04 / 24.04 · GNOME 桌面</p>
+    </div>
+</footer>
+
+<!-- ========== MODAL: 脚本详情 ========== -->
+<div class="modal fade" id="scriptModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <span id="modalIcon" class="modal-title-icon"></span>
+                    <span id="modalName"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted" id="modalDesc"></p>
+
+                <!-- 版本选择（Modal 内） -->
+                <div id="modalVersionWrapper" style="display:none; margin-bottom:1rem;">
+                    <label class="form-label small fw-bold text-muted">选择 Ubuntu 版本</label>
+                    <select id="modalVersionSelect" class="version-select" style="max-width:200px;"
+                            onchange="changeModalVersion()">
+                    </select>
+                </div>
+
+                <h6><i class="bi bi-info-circle"></i> 适用系统</h6>
+                <p id="modalOS" class="small mb-2"></p>
+
+                <h6><i class="bi bi-list-check"></i> 操作说明</h6>
+                <ol id="modalInstructions" class="instructions-list mb-3"></ol>
+
+                <!-- 功能一：Modal 内效果预览 -->
+                <div class="preview-panel" id="modalPreviewPanel" style="display:none; margin-bottom:1rem;">
+                    <div class="preview-toggle" onclick="togglePreview('modal')">
+                        <i class="bi bi-eye-fill"></i><span>效果预览</span>
+                        <i class="bi bi-chevron-down chevron"></i>
+                    </div>
+                    <div class="preview-body" id="modalPreviewBody">
+                        <img id="modalPreviewImg" src="" class="preview-image" alt="效果截图" style="display:none;"
+                             onerror="this.style.display='none'; document.getElementById('modalPreviewPlaceholder').style.display='flex';">
+                        <div class="preview-placeholder" id="modalPreviewPlaceholder"><i class="bi bi-image"></i> &nbsp;暂无截图</div>
+                        <p class="preview-text" id="modalPreviewText"></p>
+                    </div>
+                </div>
+
+                <h6><i class="bi bi-terminal"></i> 完整脚本</h6>
+                <div class="code-wrapper">
+                    <button class="btn btn-copy btn-sm code-copy-btn" onclick="copyModalScript()"
+                            style="padding:0.35rem 0.6rem;">
+                        <i class="bi bi-clipboard"></i> 复制
+                    </button>
+                    <pre class="script-preview mb-0" id="modalScript"></pre>
+                </div>
+
+                <!-- 一键运行说明 -->
+                <div class="run-tip" id="runTipBox" style="display:none;">
+                    <h6><i class="bi bi-lightning-charge"></i> 一键运行说明</h6>
+                    <p class="small mb-2">复制脚本后，可直接在终端粘贴运行（支持多行脚本）：</p>
+                    <div class="run-cmd" id="runCmdExample"></div>
+                    <p class="small text-muted mt-2 mb-0">
+                        💡 提示：复制脚本后，打开终端执行上方命令即可一键运行
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ubuntu" onclick="copyModalScript()">
+                    <i class="bi bi-clipboard"></i> 复制脚本
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== MODAL: Cron 任务生成器 ========== -->
+<div class="modal fade" id="cronModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-clock-fill modal-title-icon"></i>
+                    Cron 定时任务生成器
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    为「<span id="cronScriptName" style="font-weight:600;"></span>」生成 Cron 定时任务
+                </p>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">执行频率</label>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="cronFreq" id="freqDaily" value="daily" checked>
+                            <label class="form-check-label" for="freqDaily">每天</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="cronFreq" id="freqWeekly" value="weekly">
+                            <label class="form-check-label" for="freqWeekly">每周</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="cronFreq" id="freqMonthly" value="monthly">
+                            <label class="form-check-label" for="freqMonthly">每月</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-auto">
+                        <label class="form-label fw-bold small">时</label>
+                        <input type="number" id="cronHour" class="form-control" value="2" min="0" max="23" style="width:80px;">
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label fw-bold small">分</label>
+                        <input type="number" id="cronMinute" class="form-control" value="0" min="0" max="59" style="width:80px;">
+                    </div>
+                    <div class="col-auto" id="cronDowWrapper" style="display:none;">
+                        <label class="form-label fw-bold small">星期</label>
+                        <select id="cronDow" class="form-control" style="width:110px;">
+                            <option value="1">周一</option><option value="2">周二</option>
+                            <option value="3">周三</option><option value="4">周四</option>
+                            <option value="5">周五</option><option value="6">周六</option>
+                            <option value="0">周日</option>
+                        </select>
+                    </div>
+                    <div class="col-auto" id="cronDomWrapper" style="display:none;">
+                        <label class="form-label fw-bold small">日期</label>
+                        <input type="number" id="cronDom" class="form-control" value="1" min="1" max="28" style="width:80px;">
+                    </div>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="cronLogEnabled" checked>
+                    <label class="form-check-label" for="cronLogEnabled">
+                        开启执行日志记录 <span class="text-muted small">（日志保存到 /var/log/）</span>
+                    </label>
+                </div>
+
+                <button class="btn btn-ubuntu w-100 mb-3" onclick="generateCron()">
+                    <i class="bi bi-magic"></i> 生成 Cron 命令
+                </button>
+
+                <div id="cronResult" style="display:none;">
+                    <h6 class="fw-bold mb-2"><i class="bi bi-terminal"></i> Cron 定时表达式</h6>
+                    <div class="cron-cmd-display mb-3">
+                        <span id="cronTimeExpr" style="color:#9cdcfe;"></span>
+                        <span id="cronTimeDesc" style="color:#6a9955; font-size:0.75rem; display:block; margin-top:0.3rem;"></span>
+                    </div>
+
+                    <h6 class="fw-bold mb-2"><i class="bi bi-terminal"></i> 完整 Cron 命令</h6>
+                    <div class="code-wrapper mb-3">
+                        <button class="btn btn-copy btn-sm code-copy-btn" onclick="copyCronCmd()"
+                                style="padding:0.35rem 0.6rem;" title="复制 Cron 命令">
+                            <i class="bi bi-clipboard"></i> 复制
+                        </button>
+                        <pre class="script-preview mb-0" id="cronCmdPreview"
+                             style="max-height:none; font-size:0.8rem;"></pre>
+                    </div>
+
+                    <h6 class="fw-bold mb-2"><i class="bi bi-list-check"></i> 配置步骤</h6>
+                    <div id="cronSteps"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ================================================================
+// 全局数据（从 API 加载后缓存到这里）
+// ================================================================
+var SCRIPTS_DATA = {};   // 脚本数据缓存
+var CURRENT_SCRIPT = ''; // 当前 Modal 脚本
+var CURRENT_SCRIPT_ID = '';
+var CURRENT_VERSION = '';
+
+// ================================================================
+// 初始化：页面加载后立即获取所有模块数据
+// ================================================================
+(function() {
+    var ids = ['wechat', 'qq', 'auto_login', 'no_sleep'];
+    ids.forEach(function(id) {
+        fetch('/api/script/' + id)
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                SCRIPTS_DATA[id] = data;
+            })
+            .catch(function(e) { console.error('Load error:', id, e); });
+    });
+})();
+
+// ================================================================
+// 功能二：版本检测
+// ================================================================
+document.getElementById('btnDetect').addEventListener('click', detectVersion);
+document.getElementById('ubuntuVersionInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') detectVersion();
+});
+
+/** 页面加载时自动检测本机版本 */
+function autoDetectVersion() {
+    var btn = document.getElementById('btnAutoDetect');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> 检测中...';
+
+    fetch('/api/detect_my_version')
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-cpu"></i> 自动检测本机版本';
+
+        if (data.error) {
+            showToast('⚠️ ' + data.error + '，请手动输入版本号', 'error');
+            document.getElementById('ubuntuVersionInput').focus();
+            return;
+        }
+
+        // 自动填入输入框
+        document.getElementById('ubuntuVersionInput').value = data.major;
+
+        // 显示结果
+        var chip = data.raw
+            ? 'Ubuntu ' + data.major + '（实际版本: ' + data.raw + '）'
+            : 'Ubuntu ' + data.major;
+        document.getElementById('versionChip').textContent = chip;
+        document.getElementById('versionMessage').textContent = data.message;
+        document.getElementById('versionResult').classList.add('show');
+
+        // 高亮推荐模块
+        highlightRecommended(data.recommended || []);
+        showToast('✅ 检测完成！推荐 ' + (data.recommended ? data.recommended.length : 0) + ' 个适用模块', 'success');
+    })
+    .catch(function(e) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-cpu"></i> 自动检测本机版本';
+        showToast('⚠️ 自动检测失败，请手动输入版本号', 'error');
+        document.getElementById('ubuntuVersionInput').focus();
+    });
+}
+
+/** 手动输入版本号检测 */
+function detectVersion() {
+    var input = document.getElementById('ubuntuVersionInput').value.trim()
+        .replace(/Ubuntu\s*/i, '');
+    if (!input) {
+        showToast('⚠️ 请输入 Ubuntu 版本号（如 22.04）', 'error');
+        return;
+    }
+    fetch('/api/detect_version', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ version: input }),
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data.error) { showToast('⚠️ ' + data.error, 'error'); return; }
+
+        var chip = 'Ubuntu ' + data.version;
+        document.getElementById('versionChip').textContent = chip;
+        document.getElementById('versionMessage').textContent = data.message;
+        document.getElementById('versionResult').classList.add('show');
+        highlightRecommended(data.recommended || []);
+        showToast('✅ 检测完成！推荐 ' + (data.recommended ? data.recommended.length : 0) + ' 个适用模块', 'success');
+    })
+    .catch(function(e) { showToast('❌ 检测失败：' + e.message, 'error'); });
+}
+
+/** 高亮推荐模块 */
+function highlightRecommended(recommended) {
+    var ids = ['wechat', 'qq', 'auto_login', 'no_sleep'];
+    ids.forEach(function(id) {
+        var badge = document.getElementById('badge_' + id);
+        if (!badge) return;
+        badge.innerHTML = (recommended.indexOf(id) >= 0)
+            ? '<span class="badge-recommended">推荐</span>'
+            : '';
+    });
+}
+
+// ================================================================
+// 功能一：效果预览折叠
+// ================================================================
+function togglePreview(uid) {
+    if (uid === 'modal') {
+        var body = document.getElementById('modalPreviewBody');
+        var toggle = document.querySelector('#modalPreviewPanel .preview-toggle');
+        if (body) body.classList.toggle('open');
+        if (toggle) toggle.classList.toggle('open');
+        return;
+    }
+    var body = document.getElementById('pbody_' + uid);
+    var toggle = document.getElementById('ptoggle_' + uid);
+    var chevron = document.getElementById('pchevron_' + uid);
+    if (body) body.classList.toggle('open');
+    if (toggle) toggle.classList.toggle('open');
+    if (chevron) {
+        chevron.style.transform = (toggle && toggle.classList.contains('open')) ? 'rotate(180deg)' : '';
+    }
+}
+
+// ================================================================
+// 版本切换（卡片内下拉框）
+// ================================================================
+function switchVersion(id, version) {
+    // 更新缓存中的当前版本（以便复制/查看使用正确版本）
+    CURRENT_VERSION = version;
+    showToast('已切换到 Ubuntu ' + (version || '通用') + ' 版本', 'success');
+}
+
+// ================================================================
+// 打开 Modal：查看脚本详情
+// ================================================================
+function openModal(id) {
+    var data = SCRIPTS_DATA[id];
+    if (!data) {
+        // 数据还没加载完，再等一下
+        setTimeout(function() { openModal(id); }, 300);
+        return;
+    }
+
+    CURRENT_SCRIPT_ID = id;
+    CURRENT_SCRIPT = data.script || '';
+    CURRENT_VERSION = '';
+
+    document.getElementById('modalIcon').textContent = data.icon || '';
+    document.getElementById('modalName').textContent = data.name || '';
+    document.getElementById('modalDesc').textContent = data.description || '';
+    document.getElementById('modalOS').textContent = data.os || '';
+    document.getElementById('modalScript').textContent = data.script || '';
+    // 一键运行说明
+    var rt = document.getElementById('runTipBox');
+    var re = document.getElementById('runCmdExample');
+    if (data.script) {
+        var lines = (data.script || '').split('\n');
+        var indented = lines.map(function(l){ return '    ' + l; }).join('\n');
+        re.innerHTML = 'bash -c "$(cat <<\'SCRIPT_EOF\'\n' + lines.join('\n') + '\nSCRIPT_EOF\n)"';
+        rt.style.display = 'block';
+    } else {
+        rt.style.display = 'none';
+    }
+    document.getElementById('modalInstructions').innerHTML =
+        (data.instructions || []).map(function(i) { return '<li>' + i + '</li>'; }).join('');
+
+    // 效果预览
+    var previewPanel = document.getElementById('modalPreviewPanel');
+    var previewText = document.getElementById('modalPreviewText');
+    var previewImg = document.getElementById('modalPreviewImg');
+    var previewPlaceholder = document.getElementById('modalPreviewPlaceholder');
+    if (data.preview) {
+        previewPanel.style.display = 'block';
+        previewText.textContent = data.preview.text || '暂无效果说明';
+        // 根据当前脚本ID设置预览图
+        var imgMap = { wechat: '/static/previews/wechat.png', qq: '/static/previews/qq.png',
+                       auto_login: '/static/previews/auto_login.png', no_sleep: '/static/previews/no_sleep.png' };
+        var imgSrc = imgMap[id] || '';
+        if (imgSrc) {
+            previewImg.src = imgSrc;
+            previewImg.style.display = 'block';
+            previewPlaceholder.style.display = 'none';
+        } else {
+            previewImg.style.display = 'none';
+            previewPlaceholder.style.display = 'flex';
+        }
+    } else {
+        previewPanel.style.display = 'none';
+    }
+
+    // 版本选择
+    var verWrapper = document.getElementById('modalVersionWrapper');
+    var verSelect = document.getElementById('modalVersionSelect');
+    if (data.has_versions && data.versions && data.versions.length > 0) {
+        verWrapper.style.display = 'block';
+        verSelect.innerHTML = '<option value="">通用版本</option>' +
+            data.versions.map(function(v) { return '<option value="' + v + '">Ubuntu ' + v + '</option>'; }).join('');
+    } else {
+        verWrapper.style.display = 'none';
+    }
+
+    new bootstrap.Modal(document.getElementById('scriptModal')).show();
+}
+
+// Modal 内版本切换
+function changeModalVersion() {
+    var ver = document.getElementById('modalVersionSelect').value;
+    var id = CURRENT_SCRIPT_ID;
+    var url = ver ? '/api/script/' + id + '?version=' + encodeURIComponent(ver) : '/api/script/' + id;
+    fetch(url)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            SCRIPTS_DATA[id] = data;
+            CURRENT_SCRIPT = data.script || '';
+            CURRENT_VERSION = ver;
+            document.getElementById('modalScript').textContent = data.script || '';
+            // 同步更新运行说明
+            var lines = (data.script || '').split('\n');
+            document.getElementById('runCmdExample').innerHTML =
+                'bash -c "$(cat <<\'SCRIPT_EOF\'\n' + lines.join('\n') + '\nSCRIPT_EOF\n)"';
+            showToast('已切换到 Ubuntu ' + (ver || '通用') + ' 版本', 'success');
+        })
+        .catch(function(e) { showToast('切换失败', 'error'); });
+}
+
+// 复制当前 Modal 脚本
+function copyModalScript() {
+    doCopy(CURRENT_SCRIPT);
+}
+
+// 复制脚本（卡片按钮）
+function copyScript(id, version) {
+    var verEl = document.getElementById('ver_' + id);
+    var ver = arguments.length > 1 ? version : (verEl ? verEl.value : '');
+    var url = ver ? '/api/script/' + id + '?version=' + encodeURIComponent(ver) : '/api/script/' + id;
+    fetch(url)
+        .then(function(res) { return res.json(); })
+        .then(function(data) { doCopy(data.script || ''); })
+        .catch(function(e) { showToast('复制失败', 'error'); });
+}
+
+// ================================================================
+// 功能三：日志解析
+// ================================================================
+function parseLog() {
+    var log = document.getElementById('logInput').value.trim();
+    if (!log) { showToast('⚠️ 请先粘贴终端日志内容', 'error'); return; }
+
+    fetch('/api/parse_log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ log: log }),
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        var container = document.getElementById('logResults');
+        if (data.results && data.results.length > 0) {
+            container.innerHTML = data.results.map(function(item) {
+                var icon = item.severity === 'error' ? '❌ 错误' : item.severity === 'warning' ? '⚠️ 警告' : 'ℹ️ 信息';
+                var matchedLineHtml = item.matched_line
+                    ? '<div class="log-matched-line">' + escapeHtml(item.matched_line) + '</div>' : '';
+                return '<div class="log-error-item ' + (item.severity || 'info') + '">' +
+                    '<div class="log-error-label">' + icon + ' ' + escapeHtml(item.error) + '</div>' +
+                    matchedLineHtml +
+                    '<div class="log-solution">💡 <strong>解决方案：</strong>' + escapeHtml(item.solution) + '</div>' +
+                    '</div>';
+            }).join('');
+        } else {
+            container.innerHTML = '<div class="log-error-item info">' +
+                '<div class="log-error-label">ℹ️ 未识别到已知错误</div>' +
+                '<div class="log-solution">日志中没有检测到常见错误模式，请手动检查或搜索引擎搜索错误信息。</div>' +
+                '</div>';
+        }
+        container.classList.add('show');
+        showToast('✅ 分析完成，发现 ' + (data.total || 0) + ' 条问题', 'success');
+    })
+    .catch(function(e) { showToast('❌ 解析失败：' + e.message, 'error'); });
+}
+
+// ================================================================
+// 功能四：Cron 定时任务
+// ================================================================
+function openCronModal(id) {
+    var data = SCRIPTS_DATA[id];
+    document.getElementById('cronScriptName').textContent = data ? data.name : id;
+    window._cronScriptId = id;
+
+    // 重置
+    document.getElementById('cronResult').style.display = 'none';
+    document.getElementById('cronHour').value = '2';
+    document.getElementById('cronMinute').value = '0';
+    document.getElementById('cronDow').value = '1';
+    document.getElementById('cronDom').value = '1';
+    document.getElementById('cronLogEnabled').checked = true;
+    document.getElementById('freqDaily').checked = true;
+    toggleCronFields();
+
+    new bootstrap.Modal(document.getElementById('cronModal')).show();
+}
+
+// 频率切换显示/隐藏字段
+function toggleCronFields() {
+    var freq = document.querySelector('input[name="cronFreq"]:checked');
+    freq = freq ? freq.value : 'daily';
+    document.getElementById('cronDowWrapper').style.display = freq === 'weekly' ? '' : 'none';
+    document.getElementById('cronDomWrapper').style.display = freq === 'monthly' ? '' : 'none';
+}
+// 绑定频率切换事件
+document.querySelectorAll('input[name="cronFreq"]').forEach(function(el) {
+    el.addEventListener('change', toggleCronFields);
+});
+
+function generateCron() {
+    var freq = document.querySelector('input[name="cronFreq"]:checked');
+    freq = freq ? freq.value : 'daily';
+    var hour = parseInt(document.getElementById('cronHour').value) || 2;
+    var minute = parseInt(document.getElementById('cronMinute').value) || 0;
+    var dow = document.getElementById('cronDow').value;
+    var dom = document.getElementById('cronDom').value;
+    var logEnabled = document.getElementById('cronLogEnabled').checked;
+
+    fetch('/api/gen_cron', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            script_id: window._cronScriptId,
+            frequency: freq,
+            hour: hour,
+            minute: minute,
+            day_of_week: dow,
+            day_of_month: dom,
+            log_enabled: logEnabled,
+        }),
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data.error) { showToast('⚠️ ' + data.error, 'error'); return; }
+        window._cronCmd = data.cron_cmd;
+        document.getElementById('cronTimeExpr').textContent = data.cron_time;
+        document.getElementById('cronTimeDesc').textContent = data.time_desc;
+        document.getElementById('cronCmdPreview').textContent = data.cron_cmd;
+        document.getElementById('cronSteps').innerHTML =
+            (data.usage_steps || []).map(function(step, i) {
+                return '<div class="cron-step">' +
+                    '<div class="cron-step-num">' + (i + 1) + '</div>' +
+                    '<div>' + escapeHtml(step) + '</div></div>';
+            }).join('');
+        document.getElementById('cronResult').style.display = 'block';
+        showToast('✅ Cron 命令已生成！', 'success');
+    })
+    .catch(function(e) { showToast('❌ 生成失败：' + e.message, 'error'); });
+}
+
+function copyCronCmd() {
+    if (window._cronCmd) doCopy(window._cronCmd);
+}
+
+// ================================================================
+// 通用工具
+// ================================================================
+var _cronCmd = '';
+
+function doCopy(text) {
+    if (!text) return;
+    navigator.clipboard.writeText(text)
+        .then(function() { showToast('✅ 已复制到剪贴板', 'success'); })
+        .catch(function() {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('✅ 已复制（兼容模式）', 'success');
+        });
+}
+
+function showToast(message, type) {
+    var container = document.getElementById('toastContainer');
+    var id = 'toast_' + Date.now();
+    var bg = type === 'success' ? '#2e7d32' : type === 'error' ? '#c62828' : '#1565c0';
+    var div = document.createElement('div');
+    div.id = id;
+    div.className = 'toast-custom';
+    div.style.background = bg;
+    div.textContent = message;
+    container.appendChild(div);
+    setTimeout(function() {
+        div.style.opacity = '0';
+        div.style.transition = 'opacity 0.5s';
+        setTimeout(function() { div.remove(); }, 500);
+    }, 2500);
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function downloadPackage() {
+    showToast('正在生成部署包...', 'info');
+    window.location.href = '/api/download/package';
+}
+</script>
+    <script>
+    // ========== 更多工具折叠展开 ==========
+    function toggleMoreTools() {
+        var content = document.getElementById('moreToolsContent');
+        var icon = document.getElementById('toggleMoreIcon');
+        var text = document.getElementById('toggleMoreText');
+
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.className = 'bi bi-chevron-double-up';
+            text.textContent = '收起更多工具';
+        } else {
+            content.style.display = 'none';
+            icon.className = 'bi bi-chevron-double-down';
+            text.textContent = '展开更多工具';
+        }
+    }
+    </script>
+
+
+</body>
+</html>

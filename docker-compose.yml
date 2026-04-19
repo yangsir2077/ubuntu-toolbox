@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  ubuntu-toolbox:
+    build: .
+    container_name: ubuntu-toolbox
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+    volumes:
+      # 可选：挂载脚本目录到容器（只读）
+      - ./scripts:/app/scripts:ro
+    restart: unless-stopped
+    # 注意：容器内无法执行需要访问真实硬件/系统的脚本
+    # 此镜像主要用于查看和复制命令，实际运行脚本需在 Ubuntu 实体机上执行
