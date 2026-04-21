@@ -5,6 +5,7 @@
 const { Client } = require('ssh2');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
+const os = require('os');
 // 活跃的 SSH 连接
 const activeConnections = new Map();
 
@@ -64,13 +65,18 @@ function sshConnect(config) {
     if (config.authType === 'privateKey') {
       // 私钥认证
       try {
-        if (fs.existsSync(config.privateKeyPath)) {
-          connectConfig.privateKey = fs.readFileSync(config.privateKeyPath);
+        // 展开 ~ 为实际 home 目录
+        const keyPath = config.privateKeyPath.replace(/^~/, os.homedir());
+        console.log('[SSH] 私钥路径:', keyPath);
+        console.log('[SSH] 私钥存在:', fs.existsSync(keyPath));
+        if (fs.existsSync(keyPath)) {
+          connectConfig.privateKey = fs.readFileSync(keyPath);
+          console.log('[SSH] 私钥读取成功，长度:', connectConfig.privateKey.length);
           if (config.passphrase) {
             connectConfig.passphrase = config.passphrase;
           }
         } else {
-          reject(new Error(`私钥文件不存在: ${config.privateKeyPath}`));
+          reject(new Error(`私钥文件不存在: ${keyPath}`));
           return;
         }
       } catch (err) {

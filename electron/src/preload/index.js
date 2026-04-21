@@ -53,6 +53,7 @@ contextBridge.exposeInMainWorld('ELECTRON_BRIDGE', {
   isElectron: true,
   openExternal: (url) => ipcRenderer.invoke('electron:openExternal', url),
   showItemInFolder: (path) => ipcRenderer.invoke('electron:showItemInFolder', path),
+  getVersion: () => ipcRenderer.invoke('electron:version'),
 
   // -------- 平台检测 --------
   isLinux: process.platform === 'linux',

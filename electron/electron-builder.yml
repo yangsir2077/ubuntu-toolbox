@@ -56,6 +56,15 @@ linux:
   category: Utility
   maintainer: yangsir <yangsir@example.com>
   icon: assets/icon.png
+  executableName: ubuntu-toolbox-desktop
+  # AppImage 文件名
+  artifactName: "${productName}-${version}.${ext}"
+  # deb 包自动生成 .desktop 文件（/usr/share/applications/com.ubuntu-toolbox.desktop）
+  # 并创建桌面快捷方式（通过 desktopFile 注入）
+  desktop:
+    MimeType:
+      - text/html
+      - text/xml
 
 # macOS 配置
 mac:

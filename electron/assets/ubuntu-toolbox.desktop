@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Ubuntu 工具箱
+Comment=Linux 系统管理可视化工具
+Exec=/opt/ubuntu-toolbox-desktop/Ubuntu\ 工具箱-%f %U
+Icon=/opt/ubuntu-toolbox-desktop/resources/assets/icon.png
+Terminal=false
+Type=Application
+Categories=Utility;System;
+Keywords=ubuntu;linux;toolbox;system;admin;
+StartupWMClass=ubuntu-toolbox-desktop
+MimeType=text/html;text/xml;application/xhtml+xml;

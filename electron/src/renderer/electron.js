@@ -80,6 +80,7 @@
   // ================================================================
   function createTerminalPanel(scriptId) {
     const panelId = `terminal-${scriptId}`;
+    console.log('[Terminal] 创建面板, panelId:', panelId);
 
     // 避免重复创建
     const existing = document.getElementById(panelId);
@@ -188,9 +189,18 @@
   // 处理脚本输出
   function handleScriptOutput(data) {
     const { scriptId, type, data: text, exitCode, sessionId } = data;
-    const panelId = `terminal-${scriptId}`;
-    const body = document.getElementById(`${panelId}-body`);
-    if (!body) return;
+    // 优先尝试远程面板（scriptId 带 -remote 的情况）
+    let body = document.getElementById(`terminal-${scriptId}-body`);
+    if (!body) {
+      // 尝试本地面板（去掉 -remote 后缀）
+      const localId = scriptId.replace(/-remote$/, '');
+      body = document.getElementById(`terminal-${localId}-body`);
+    }
+    if (!body) {
+      console.error('[Terminal] 未找到面板 body, scriptId:', scriptId, ', 已有的terminal面板:', [...document.querySelectorAll('[id^=terminal-]')].map(e=>e.id).join(', '));
+      return;
+    }
+    console.log('[Terminal] 输出:', type, text ? text.slice(0,100) : '', 'scriptId:', scriptId);
 
     const status = document.getElementById(`${panelId}-status`);
 
@@ -285,7 +295,9 @@
         let servers;
         try {
           servers = await window.ELECTRON_BRIDGE.sshGetServers();
-        } catch {
+          console.log('[远程运行] 服务器列表:', servers);
+        } catch (err) {
+          console.error('[远程运行] 获取服务器失败:', err.message);
           servers = [];
         }
 
@@ -317,7 +329,7 @@
             connId = result.connectionId;
             connectedServerMap[targetServer.id] = connId;
           } catch (err) {
-            const body = document.getElementById(`terminal-moduleId + "-remote"-body`);
+            const body = document.getElementById(`terminal-${moduleId}-remote-body`);
             if (body) body.innerHTML += `<span class="line-error">SSH 连接失败: ${err.message}</span>`;
             return;
           }
@@ -332,8 +344,8 @@
             sshServerId: connId, // 传 connectionId，不是 serverId
           });
         } catch (err) {
-          const body = document.getElementById(`terminal-moduleId + "-remote"-body`);
-          if (body) body.innerHTML += `<span class="line-error">启动失败: ${err.message}</span>`;
+          const body2 = document.getElementById(`terminal-${moduleId}-remote-body`);
+          if (body2) body2.innerHTML += `<span class="line-error">启动失败: ${err.message}</span>`;
         }
       };
 
@@ -351,15 +363,17 @@
     if (settingsPanelInjected) return;
 
     // 在 header 区域添加设置按钮
-    const header = document.querySelector('.main-header .container');
-    if (!header) return;
+    const headerActions = document.getElementById('et-header-actions');
+    if (!headerActions || settingsPanelInjected) return;
 
     const btn = document.createElement('button');
     btn.id = 'et-settings-btn';
     btn.innerHTML = '⚙️ 设置';
-    btn.style.cssText = 'background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.3);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:0.85rem;margin-top:10px;';
+    btn.style.cssText = 'background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.35);border-radius:8px;padding:6px 14px;cursor:pointer;font-size:0.85rem;transition:all 0.2s;';
+    btn.onmouseover = () => btn.style.background = 'rgba(255,255,255,0.25)';
+    btn.onmouseout = () => btn.style.background = 'rgba(255,255,255,0.15)';
     btn.onclick = openSettingsPanel;
-    header.appendChild(btn);
+    headerActions.appendChild(btn);
 
     settingsPanelInjected = true;
   }
@@ -590,12 +604,21 @@
   // 自动更新提示
   // ================================================================
   let updateToast = null;
-  function showUpdateToast({ status, version, notes, percent }) {
+  async function showUpdateToast({ status, version, notes, percent, message }) {
     // 移除旧提示
     const old = document.getElementById('et-update-toast');
     if (old) old.remove();
 
-    if (status === 'no-url') return;
+    if (status === 'no-url') {
+      // 显示提示：检查更新未配置
+      const toast = document.createElement('div');
+      toast.id = 'et-update-toast';
+      toast.style.cssText = `position:fixed;top:20px;right:20px;z-index:999999;background:#1e1e1e;border:1px solid #3d3d3d;border-radius:12px;padding:16px 20px;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.5);`;
+      toast.innerHTML = `<div style="color:#f48771;font-size:0.9rem;">🔔 自动更新</div><div style="color:#888;font-size:0.82rem;margin-top:8px;">当前版本: ${await window.ELECTRON_BRIDGE.getVersion?.() || '1.0.0'}</div><div style="color:#666;font-size:0.78rem;margin-top:4px;">请到 GitHub Releases 下载最新版</div>`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 5000);
+      return;
+    }
 
     const toast = document.createElement('div');
     toast.id = 'et-update-toast';

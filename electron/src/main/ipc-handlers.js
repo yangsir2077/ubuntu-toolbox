@@ -2,6 +2,7 @@
  * IPC 处理器注册（从 index.js 分离）
  */
 const { ipcMain } = require('electron');
+const { app } = require('electron');
 const { getFlaskUrl } = require('./flask-server');
 const { checkForUpdates, downloadUpdate, quitAndInstall } = require('./updater');
 const {
@@ -89,6 +90,8 @@ function registerIpcHandlers(mainWindow) {
   ipcMain.handle('updater:check', async (event) => {
     return await checkForUpdates(event.sender.getOwnerBrowserWindow());
   });
+
+  ipcMain.handle('electron:version', async () => app.getVersion());
 
   ipcMain.handle('updater:download', async () => {
     return await downloadUpdate();

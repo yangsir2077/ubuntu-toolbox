@@ -23,8 +23,9 @@ const UPDATE_CONFIG = {
   autoDownload: false,
   // 是否自动安装（默认 false）
   autoInstall: false,
-  // 更新检查 URL（留空则只在开发/测试模式检查）
-  updateUrl: process.env.ELECTRON_UPDATE_URL || '',
+  // GitHub releases 更新（自动从当前仓库的 latest release 拉取）
+  // 也支持 ELECTRON_UPDATE_URL 环境变量指定自定义 JSON 服务器
+  updateUrl: process.env.ELECTRON_UPDATE_URL || 'https://github.com/yangsir/ubuntu-toolbox',
 };
 
 // 日志配置
@@ -79,13 +80,20 @@ function setupUpdaterEvents(window) {
 async function checkForUpdates(window) {
   if (!UPDATE_CONFIG.updateUrl) {
     log.info('[Updater] 未配置更新服务器，跳过检查');
+    window?.webContents.send('updater:status', { status: 'no-url', message: '未配置更新服务器' });
     return { status: 'no-url' };
   }
   try {
-    autoUpdater.setFeedURL({ provider: 'generic', url: UPDATE_CONFIG.updateUrl });
+    const isGithub = UPDATE_CONFIG.updateUrl.includes('github.com');
+    if (isGithub) {
+      autoUpdater.setFeedURL({ provider: 'github', repo: UPDATE_CONFIG.updateUrl });
+    } else {
+      autoUpdater.setFeedURL({ provider: 'generic', url: UPDATE_CONFIG.updateUrl });
+    }
     return await autoUpdater.checkForUpdates();
   } catch (err) {
     log.error('[Updater] 检查更新失败:', err.message);
+    window?.webContents.send('updater:status', { status: 'error', message: err.message });
     return null;
   }
 }
