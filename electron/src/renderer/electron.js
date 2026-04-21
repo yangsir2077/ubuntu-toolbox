@@ -200,8 +200,8 @@
       console.error('[Terminal] 未找到面板 body, scriptId:', scriptId, ', 已有的terminal面板:', [...document.querySelectorAll('[id^=terminal-]')].map(e=>e.id).join(', '));
       return;
     }
-    console.log('[Terminal] 输出:', type, text ? text.slice(0,100) : '', 'scriptId:', scriptId);
-
+    // 用同样逻辑确定 panelId
+    const panelId = scriptId.includes('-remote') ? `terminal-${scriptId}` : `terminal-${scriptId.replace(/-remote$/, '')}`;
     const status = document.getElementById(`${panelId}-status`);
 
     if (type === 'info') {
