@@ -900,4 +900,4 @@ python3 app.py
 # ================================================================
 if __name__ == '__main__':
     _debug = os.environ.get('ELECTRON_FLASK_ROOT', '') == ''
-    app.run(host='0.0.0.0', port=int(os.environ.get('FLASK_PORT', 5000)), debug=_debug)
+    app.run(host='0.0.0.0', port=int(os.environ.get('FLASK_PORT', 5000)), debug=_debug, use_reloader=False)

@@ -114,10 +114,10 @@ function startFlask(port) {
       flaskProcess = null;
     });
 
-    // 超时处理：5秒内没启动算失败
+    // 超时处理：10秒内没启动算失败（Flask 导入模块较多，需要更多时间）
     setTimeout(() => {
       if (!started) {
-        // 再等2秒
+        // 再等3秒
         setTimeout(() => {
           if (!started && flaskProcess) {
             console.error('[Flask] Failed to start within timeout');
@@ -125,9 +125,9 @@ function startFlask(port) {
           } else if (started) {
             resolve();
           }
-        }, 2000);
+        }, 3000);
       }
-    }, 1000);
+    }, 10000);
   });
 }
 
