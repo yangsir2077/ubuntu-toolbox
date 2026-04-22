@@ -19,6 +19,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    x: 100,       // 强制从可见区域打开，防止上次位置在屏幕外
+    y: 80,
     minWidth: 900,
     minHeight: 600,
     title: 'Ubuntu 工具箱',
@@ -39,6 +41,19 @@ function createWindow() {
   // 窗口准备好后显示
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    // 确保窗口在可见区域（防止上次保存在屏幕外）
+    const bounds = mainWindow.getBounds();
+    const screen = require('electron').screen;
+    const displays = screen.getAllDisplays();
+    const visible = displays.some(d => {
+      const { x, y, width, height } = d.bounds;
+      return bounds.x < x + width && bounds.x + bounds.width > x &&
+             bounds.y < y + height && bounds.y + bounds.height > y;
+    });
+    if (!visible) {
+      mainWindow.setBounds({ x: 100, y: 80, width: 1280, height: 800 });
+      console.log('[Main] Window was off-screen, moved to (100,80)');
+    }
     console.log('[Main] Window ready');
   });
 
