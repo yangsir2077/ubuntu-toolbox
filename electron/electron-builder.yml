@@ -59,12 +59,19 @@ linux:
   executableName: ubuntu-toolbox-desktop
   # AppImage 文件名
   artifactName: "${productName}-${version}.${ext}"
-  # deb 包自动生成 .desktop 文件（/usr/share/applications/com.ubuntu-toolbox.desktop）
-  # 并创建桌面快捷方式（通过 desktopFile 注入）
   desktop:
     MimeType:
       - text/html
       - text/xml
+  # AppImage 需要把 .desktop 和图标放在 squashfs-root 同一级
+  fileAssociations:
+    - ext: sh
+      name: Shell Script
+      description: Shell installation script
+      mimeType: application/x-shellscript
+
+# extraResources 改为直接复制 assets，避免路径问题
+# （extraResources 是给打包后的 resources/ 目录用，和 asar=false 配合）
 
 # macOS 配置
 mac:

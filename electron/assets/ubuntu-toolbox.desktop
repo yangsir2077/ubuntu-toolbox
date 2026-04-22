@@ -1,8 +1,8 @@
 [Desktop Entry]
 Name=Ubuntu 工具箱
 Comment=Linux 系统管理可视化工具
-Exec=/opt/ubuntu-toolbox-desktop/Ubuntu\ 工具箱-%f %U
-Icon=/opt/ubuntu-toolbox-desktop/resources/assets/icon.png
+Exec=AppRun %f
+Icon=ubuntu-toolbox-desktop.png
 Terminal=false
 Type=Application
 Categories=Utility;System;
