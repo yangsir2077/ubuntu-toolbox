@@ -205,17 +205,17 @@
     const status = document.getElementById(`${panelId}-status`);
 
     if (type === 'info') {
-      body.innerHTML += `<span class="line-info">${escapeHtml(text)}</span>`;
+      body.innerHTML += `<span class="line-info">${escapeTerminal(text)}</span><br>`;
     } else if (type === 'error') {
-      body.innerHTML += `<span class="line-error">${escapeHtml(text)}</span>`;
+      body.innerHTML += `<span class="line-error">${escapeTerminal(text)}</span><br>`;
     } else if (type === 'stdout') {
-      body.innerHTML += `<span class="line-stdout">${escapeHtml(text)}</span>`;
+      body.innerHTML += `<span class="line-stdout">${escapeTerminal(text)}</span>`;
     } else if (type === 'exit') {
       const cls = exitCode === 0 ? 'done' : 'error';
       const msg = exitCode === 0 ? '✅ 完成' : `❌ 退出码 ${exitCode}`;
       status.textContent = msg;
       status.className = `et-status ${cls}`;
-      body.innerHTML += `<span class="line-exit">${'─'.repeat(50)}\n⏹ 进程已退出，退出码: ${exitCode}</span>`;
+      body.innerHTML += `<span class="line-exit">${'─'.repeat(50)}<br>⏹ 进程已退出，退出码: ${exitCode}</span><br>`;
     }
 
     // 滚动到底部
@@ -580,6 +580,16 @@
   function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // 终端输出专用转义（转 HTML + 换行 + 过滤 ANSI 颜色码）
+  function escapeTerminal(str) {
+    if (!str) return '';
+    // 过滤 ANSI 颜色/控制码（保留普通换行）
+    str = str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+    // HTML 转义 + 
+ 转 <br>
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\n/g, '<br>');
   }
 
   // ================================================================
